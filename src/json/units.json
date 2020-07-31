@@ -22,7 +22,7 @@
     "attack": 0
   },
   {
-    "name": "Łucznik",
+    "name": "Lucznik",
     "desc": "Zasięgowa jednostka",
     "production": 100,
     "requires": [],
@@ -91,7 +91,7 @@
     "attack": 5
   },
   {
-    "name": "Konni",
+    "name": "Konny",
     "desc": "Mobilna jednostka lekkiej kawalerii.",
     "production": 32,
     "requires": [],
@@ -120,7 +120,7 @@
     "attack": 10
   },
   {
-    "name": "Rydwany",
+    "name": "Rydwan",
     "desc": "Jednostka bliskiego starcia.",
     "production": 250,
     "requires": [],
@@ -135,7 +135,7 @@
     "attack": 9
   },
   {
-    "name": "Rycerze",
+    "name": "Rycerz",
     "desc": "Silna i mobilna jednostka bliskiego starcia.",
     "production": 200,
     "requires": [],
@@ -149,7 +149,7 @@
     "attack": 15
   },
   {
-    "name": "Armaty",
+    "name": "Armata",
     "desc": "Jednostka oblężnicza, wymagana przy ataku na miasto posiadające mur.",
     "production": 300,
     "requires": [],

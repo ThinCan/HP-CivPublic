@@ -70,7 +70,7 @@ class CraftworkBuilder extends BuildingBuilder {
 class Stables extends BuildingBuilder {
   Build() {
     this.city.AddResourceBuilding("horse", -1);
-    this.city.AddAvailable(FindUnitInJSON("Konny"));
+    this.city.AddAvailable(FindUnitInJSON("Konni"));
     return new Building(() => ({ food: 3 }), this.data);
   }
 }
@@ -189,7 +189,7 @@ class Crossbowmen extends BuildingBuilder {
 }
 class Chariots extends BuildingBuilder {
   Build() {
-    this.city.AddAvailable(FindUnitInJSON("Rydwan"));
+    this.city.AddAvailable(FindUnitInJSON("Rydwany"));
     return new Building(() => ({}), this.data);
   }
 }

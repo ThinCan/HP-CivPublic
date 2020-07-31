@@ -10,14 +10,20 @@ import { IBuildingJson } from "./Util/GlobalInterfaces";
 import { Building } from "./Builders/Builder";
 
 export interface IAsset {
-  settler: HTMLImageElement;
-  worker: HTMLImageElement;
-  archer: HTMLImageElement;
-  warrior: HTMLImageElement;
-  taran: HTMLImageElement;
-  docent: HTMLImageElement;
+  Osadnik: HTMLImageElement;
+  Robotnik: HTMLImageElement;
+  Lucznik: HTMLImageElement;
+  Kusznik: HTMLImageElement;
+  Wojownik: HTMLImageElement;
+  Taran: HTMLImageElement;
+  Docent: HTMLImageElement;
+  Katapulta: HTMLImageElement;
+  Armata: HTMLImageElement;
+  Konny: HTMLImageElement;
+  Rydwan: HTMLImageElement;
+  Rycerz: HTMLImageElement;
 
-  city: HTMLImageElement;
+  Miasto: HTMLImageElement;
 }
 
 export class Game {
@@ -117,13 +123,19 @@ const game = new Game({ x: 100, y: 100 });
 
 game
   .LoadAssets({
-    settler: "settler",
-    city: "city",
-    worker: "units/worker",
-    archer: "units/archer",
-    warrior: "units/warrior",
-    taran: "units/warrior",
-    docent: "units/docent",
+    Miasto: "city",
+    Osadnik: "settler",
+    Robotnik: "units/worker",
+    Lucznik: "units/archer",
+    Kusznik: "units/crossbowman",
+    Wojownik: "units/warrior",
+    Taran: "units/taran",
+    Docent: "units/docent",
+    Katapulta: "units/catapult",
+    Armata: "units/cannon",
+    Konny: "units/cavalry",
+    Rycerz: "units/knight",
+    Rydwan: "units/chariot",
   })
   .then(() => {
     game.Start();

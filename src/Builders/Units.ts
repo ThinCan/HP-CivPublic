@@ -5,6 +5,36 @@ import Unit, { IUnitAction } from "../Entity/Unit";
 import { Civilization } from "../Civiliziations/Civilization";
 import { IBuilder } from "./Builder";
 import * as TileModifier from "../json/modifiers.json";
+import { IAsset } from "..";
+
+function GetMeleeAttack(unit: Unit) {
+  const meleeAttack = () => {
+    const adj = unit.tile.GetAdj();
+    const filtered = adj.filter((t) => t.entity && t.entity.civ !== unit.civ);
+    unit.SelectActionsTiles(filtered, "purple");
+    unit.tileAction = (tile) => {
+      tile.entity.ReceiveDamage(unit.attack);
+      unit.walkingRange = 0;
+      unit.civ.NextAction();
+    };
+  };
+  return [this.CreateUnitAction("Atakuje", meleeAttack)];
+}
+function GetRangeAttack(unit: Unit) {
+  const rangeAttack = () => {
+    const adj = unit.tile.GetAdj(3);
+    unit.SelectActionsTiles(
+      adj.filter((t) => t.entity && t.entity.civ !== unit.civ),
+      "purple"
+    );
+    unit.tileAction = (tile) => {
+      tile.entity.ReceiveDamage(unit.attack);
+      unit.walkingRange = 0;
+      unit.civ.NextAction();
+    };
+  };
+  return [this.CreateUnitAction("Atak zasięgowy", rangeAttack)];
+}
 
 function GetBasicUnitActions(unit: Unit): IUnitAction[] {
   return [
@@ -32,47 +62,52 @@ export abstract class UnitBuilder implements IBuilder {
     public civ: Civilization,
     public dest: Tile
   ) {}
-  abstract Build(): Unit;
-}
+  private GetUnit(img: keyof IAsset) {
+    return new Unit(this.dest, this.assets[img], this.civ, this.data);
+  }
 
-class SettlerBuilder extends UnitBuilder {
-  Build() {
-    const unit = new Unit(
-      this.dest,
-      this.civ.game.assets.settler,
-      this.civ,
-      this.data
-    );
+  protected abstract GetUnitActions(unit: Unit): IUnitAction[];
+  protected abstract GetUnitName(): keyof IAsset;
+  protected OnBeforeBuild(unit: Unit) {}
+  protected CreateUnitAction(
+    desc: string,
+    callback: () => void,
+    img: string = "./img/zamek.png"
+  ): IUnitAction {
+    return { desc, execute: callback, img };
+  }
+  Build(): Unit {
+    const unit = this.GetUnit(this.GetUnitName());
+    unit.actions = [...GetBasicUnitActions(unit), ...this.GetUnitActions(unit)];
+    this.OnBeforeBuild(unit);
 
-    unit.actions = [
-      {
-        desc: "Zbuduj miasto",
-        execute: function () {
-          if (unit.tile.modifier) return;
-
-          unit.civ.RemoveEntity(unit);
-          unit.civ.AddEntity(
-            new City(unit.tile, unit.civ.game.assets.city, unit.civ)
-          );
-        },
-        img: "./img/zamek.png",
-      },
-      ...GetBasicUnitActions(unit),
-    ];
     return unit;
+  }
+  private get assets() {
+    return this.civ.game.assets;
   }
 }
 
+class SettlerBuilder extends UnitBuilder {
+  GetUnitActions(unit: Unit): IUnitAction[] {
+    const buildCityCallback = () => {
+      if (unit.tile.modifier) return;
+      unit.civ.RemoveEntity(unit);
+      unit.civ.AddEntity(
+        new City(unit.tile, unit.civ.game.assets.Miasto, unit.civ)
+      );
+    };
+    return [this.CreateUnitAction("Zbuduj miasto", buildCityCallback)];
+  }
+  GetUnitName(): keyof IAsset {
+    return "Osadnik";
+  }
+}
 class WorkerBuilder extends UnitBuilder {
-  Build() {
-    const unit = new Unit(
-      this.dest,
-      this.civ.game.assets.worker,
-      this.civ,
-      this.data
-    );
-    unit.actions = GetBasicUnitActions(unit);
-
+  GetUnitActions(): IUnitAction[] {
+    return [];
+  }
+  OnBeforeBuild(unit: Unit) {
     unit.additionalActionsCallback = (tile: Tile) => {
       const actions: IUnitAction[] = [];
       if (!tile.owner) return actions;
@@ -135,76 +170,43 @@ class WorkerBuilder extends UnitBuilder {
       }
       return actions;
     };
-
-    return unit;
+  }
+  GetUnitName(): keyof IAsset {
+    return "Robotnik";
   }
 }
 class ArcherBuilder extends UnitBuilder {
-  Build() {
-    const unit = new Unit(
-      this.dest,
-      this.civ.game.assets.archer,
-      this.civ,
-      this.data
-    );
-
-    unit.actions = [
-      {
-        desc: "Atak zasięgowy",
-        execute() {
-          const tiles = unit.tile
-            .GetAdj(3)
-            .filter((t) => t.entity && t.entity.civ !== unit.civ);
-          unit.SelectActionsTiles(tiles, "purple");
-          unit.tileAction = (tile) => {
-            tile.entity.ReceiveDamage(unit.attack)
-            unit.walkingRange = 0;
-            unit.civ.NextAction();
-          };
-        },
-        img: "./img/zamek.png",
-      },
-    ];
-
-    return unit;
+  GetUnitName(): keyof IAsset {
+    return "Lucznik";
+  }
+  GetUnitActions(unit: Unit): IUnitAction[] {
+    return GetRangeAttack(unit);
   }
 }
 class DocentBuilder extends UnitBuilder {
-  Build() {
-    const unit = new Unit(
-      this.dest,
-      this.civ.game.assets.docent,
-      this.civ,
-      this.data
-    );
-    unit.actions = [
-      ...GetBasicUnitActions(unit),
-      {
-        desc: "Wyszukaj minerał",
-        img: "./img/zamek.png",
-        execute: (() => {
-          let tile: Tile;
-
-          return function () {
-            if (!tile)
-              tile = unit.map.tilesArray.find(
-                (t) => t.modifier === TileModifier.mineral
-              );
-            const dist = tile.FindPath(unit.tile).length - 1;
-            unit.civ.game.ui.appendToActionLog(`Dystans do minerału: ${dist}`);
-            unit.walkingRange = 0;
-            unit.civ.NextAction();
-          };
-        })(),
-      },
-    ];
+  GetUnitName(): keyof IAsset {
+    return "Docent";
+  }
+  GetUnitActions(unit: Unit): IUnitAction[] {
+    const findCrystal = (() => {
+      let tile: Tile;
+      return function () {
+        if (!tile)
+          tile = unit.map.tilesArray.find(
+            (t) => t.modifier === TileModifier.mineral
+          );
+        const dist = tile.FindPath(unit.tile).length - 1;
+        unit.civ.game.ui.appendToActionLog(`Dystans do minerału: ${dist}`);
+        unit.walkingRange = 0;
+        unit.civ.NextAction();
+      };
+    })();
     unit.additionalActionsCallback = (tile) => {
       const actions: IUnitAction[] = [];
       console.warn("DODAC DO ONLINE");
       if (tile.modifier === TileModifier.mineral) {
         tile.displayModifier = true;
         unit.civ.game.ui.appendToActionLog("Minerał fiutta odnaleziony!");
-
         actions.push({
           desc: "Zacznij wydobywać minerał",
           img: "./img/modifiers/mineral.png",
@@ -219,57 +221,100 @@ class DocentBuilder extends UnitBuilder {
       return actions;
     };
 
-    return unit;
+    return [
+      this.CreateUnitAction(
+        "Szukaj kryształu",
+        findCrystal,
+        "./img/modifiers/mineral.png"
+      ),
+    ];
   }
 }
 
-class Builder extends UnitBuilder {
-  Build(){
-    const unit = new Unit(this.dest, this.civ.game.assets. , this.civ)
-
-    return unit
+class WarriorBuilder extends UnitBuilder {
+  GetUnitName(): keyof IAsset {
+    return "Wojownik";
+  }
+  GetUnitActions(unit: Unit): IUnitAction[] {
+    return GetMeleeAttack(unit);
   }
 }
-class Builder extends UnitBuilder {
-  Build(){
-    const unit = new Unit(this.dest, this.civ.game.assets. , this.civ)
-
-    return unit
+class TaranBuilder extends UnitBuilder {
+  GetUnitName(): keyof IAsset {
+    return "Taran";
+  }
+  GetUnitActions(unit: Unit): IUnitAction[] {
+    return [];
   }
 }
-class Builder extends UnitBuilder {
-  Build(){
-    const unit = new Unit(this.dest, this.civ.game.assets. , this.civ)
-
-    return unit
+class CatapultBuilder extends UnitBuilder {
+  GetUnitName(): keyof IAsset {
+    return "Katapulta";
+  }
+  GetUnitActions(unit: Unit): IUnitAction[] {
+    const bombardAttack = () => {
+      const adj = unit.tile.GetAdj(3);
+      const filtered = adj.filter((t) => t.city && t.city.civ !== unit.civ);
+      unit.SelectActionsTiles(filtered, "purple");
+      unit.tileAction = (tile) => {
+        const city = tile.city;
+        /* Atakuj miasto */
+        unit.walkingRange = 0;
+        unit.civ.NextAction();
+      };
+    };
+    return [this.CreateUnitAction("Atakuj miasto", bombardAttack)];
   }
 }
-class Builder extends UnitBuilder {
-  Build(){
-    const unit = new Unit(this.dest, this.civ.game.assets. , this.civ)
-
-    return unit
+class CannonBuilder extends UnitBuilder {
+  GetUnitName(): keyof IAsset {
+    return "Armata";
+  }
+  GetUnitActions(unit: Unit): IUnitAction[] {
+    const bombardAttack = () => {
+      const adj = unit.tile.GetAdj(3);
+      const filtered = adj.filter((t) => t.city && t.city.civ !== unit.civ);
+      unit.SelectActionsTiles(filtered, "purple");
+      unit.tileAction = (tile) => {
+        const city = tile.city;
+        /* Atakuj miasto */
+        unit.walkingRange = 0;
+        unit.civ.NextAction();
+      };
+    };
+    return [this.CreateUnitAction("Atakuj miasto", bombardAttack)];
   }
 }
-class Builder extends UnitBuilder {
-  Build(){
-    const unit = new Unit(this.dest, this.civ.game.assets. , this.civ)
-
-    return unit
+class CavalryBuilder extends UnitBuilder {
+  GetUnitName(): keyof IAsset {
+    return "Konny";
+  }
+  GetUnitActions(unit: Unit): IUnitAction[] {
+    return GetMeleeAttack(unit);
   }
 }
-class Builder extends UnitBuilder {
-  Build(){
-    const unit = new Unit(this.dest, this.civ.game.assets. , this.civ)
-
-    return unit
+class KnightBuilder extends UnitBuilder {
+  GetUnitName(): keyof IAsset {
+    return "Rycerz";
+  }
+  GetUnitActions(unit: Unit): IUnitAction[] {
+    return GetMeleeAttack(unit);
   }
 }
-class Builder extends UnitBuilder {
-  Build(){
-    const unit = new Unit(this.dest, this.civ.game.assets. , this.civ)
-
-    return unit
+class CrossbowBuilder extends UnitBuilder {
+  GetUnitName(): keyof IAsset {
+    return "Kusznik";
+  }
+  GetUnitActions(unit: Unit): IUnitAction[] {
+    return GetRangeAttack(unit);
+  }
+}
+class ChariotBuilder extends UnitBuilder {
+  GetUnitName(): keyof IAsset {
+    return "Rydwan";
+  }
+  GetUnitActions(unit: Unit): IUnitAction[] {
+    return GetMeleeAttack(unit);
   }
 }
 
@@ -286,6 +331,22 @@ export function GetUnitBuilder(data: IUnitJson, civ: Civilization, tile: Tile) {
       return Resolver(ArcherBuilder);
     case "Docent":
       return Resolver(DocentBuilder);
+    case "Wojownik":
+      return Resolver(WarriorBuilder);
+    case "Kusznik":
+      return Resolver(CrossbowBuilder);
+    case "Rydwan":
+      return Resolver(ChariotBuilder);
+    case "Rycerz":
+      return Resolver(KnightBuilder);
+    case "Katapulta":
+      return Resolver(CatapultBuilder);
+    case "Armata":
+      return Resolver(CannonBuilder);
+    case "Konny":
+      return Resolver(CavalryBuilder);
+    case "Taran":
+      return Resolver(TaranBuilder);
 
     default:
       throw new Error("Unit type not recognized ::GetUnitBuilder");
