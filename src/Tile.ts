@@ -195,7 +195,7 @@ export default class Tile {
     return Astar.findPath(this, tile);
   }
   MouseClick() {
-    if (this.selected?.entity) this.selected.entity.AcceptTile(this);
+    if (this.selected) this.selected.entity.AcceptTile(this);
     else if (this.entity?.selected === false) this.entity.Select();
     else if (this.city) this.city.Select();
   }

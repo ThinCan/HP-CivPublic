@@ -18,7 +18,7 @@ function GetMeleeAttack(unit: Unit) {
       unit.civ.NextAction();
     };
   };
-  return [this.CreateUnitAction("Atakuje", meleeAttack)];
+  return meleeAttack;
 }
 function GetRangeAttack(unit: Unit) {
   const rangeAttack = () => {
@@ -33,7 +33,7 @@ function GetRangeAttack(unit: Unit) {
       unit.civ.NextAction();
     };
   };
-  return [this.CreateUnitAction("Atak zasięgowy", rangeAttack)];
+  return rangeAttack;
 }
 
 function GetBasicUnitActions(unit: Unit): IUnitAction[] {
@@ -180,7 +180,7 @@ class ArcherBuilder extends UnitBuilder {
     return "Lucznik";
   }
   GetUnitActions(unit: Unit): IUnitAction[] {
-    return GetRangeAttack(unit);
+    return [this.CreateUnitAction("Atak zasięgowy", GetRangeAttack(unit))];
   }
 }
 class DocentBuilder extends UnitBuilder {
@@ -236,7 +236,7 @@ class WarriorBuilder extends UnitBuilder {
     return "Wojownik";
   }
   GetUnitActions(unit: Unit): IUnitAction[] {
-    return GetMeleeAttack(unit);
+    return [this.CreateUnitAction("Atak", GetMeleeAttack(unit))];
   }
 }
 class TaranBuilder extends UnitBuilder {
@@ -258,7 +258,7 @@ class CatapultBuilder extends UnitBuilder {
       unit.SelectActionsTiles(filtered, "purple");
       unit.tileAction = (tile) => {
         const city = tile.city;
-        /* Atakuj miasto */
+        city.ReceiveDamage(unit.attack);
         unit.walkingRange = 0;
         unit.civ.NextAction();
       };
@@ -277,7 +277,7 @@ class CannonBuilder extends UnitBuilder {
       unit.SelectActionsTiles(filtered, "purple");
       unit.tileAction = (tile) => {
         const city = tile.city;
-        /* Atakuj miasto */
+        city.ReceiveDamage(unit.attack);
         unit.walkingRange = 0;
         unit.civ.NextAction();
       };
@@ -290,7 +290,7 @@ class CavalryBuilder extends UnitBuilder {
     return "Konny";
   }
   GetUnitActions(unit: Unit): IUnitAction[] {
-    return GetMeleeAttack(unit);
+    return [this.CreateUnitAction("Atak", GetMeleeAttack(unit))];
   }
 }
 class KnightBuilder extends UnitBuilder {
@@ -298,7 +298,7 @@ class KnightBuilder extends UnitBuilder {
     return "Rycerz";
   }
   GetUnitActions(unit: Unit): IUnitAction[] {
-    return GetMeleeAttack(unit);
+    return [this.CreateUnitAction("Atak", GetMeleeAttack(unit))];
   }
 }
 class CrossbowBuilder extends UnitBuilder {
@@ -306,7 +306,7 @@ class CrossbowBuilder extends UnitBuilder {
     return "Kusznik";
   }
   GetUnitActions(unit: Unit): IUnitAction[] {
-    return GetRangeAttack(unit);
+    return [this.CreateUnitAction("Atak zasięgowy", GetRangeAttack(unit))];
   }
 }
 class ChariotBuilder extends UnitBuilder {
@@ -314,7 +314,7 @@ class ChariotBuilder extends UnitBuilder {
     return "Rydwan";
   }
   GetUnitActions(unit: Unit): IUnitAction[] {
-    return GetMeleeAttack(unit);
+    return [this.CreateUnitAction("Atak", GetMeleeAttack(unit))];
   }
 }
 
@@ -327,7 +327,7 @@ export function GetUnitBuilder(data: IUnitJson, civ: Civilization, tile: Tile) {
       return Resolver(SettlerBuilder);
     case "Robotnik":
       return Resolver(WorkerBuilder);
-    case "Łucznik":
+    case "Lucznik":
       return Resolver(ArcherBuilder);
     case "Docent":
       return Resolver(DocentBuilder);

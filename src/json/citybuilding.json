@@ -45,7 +45,7 @@
     "cost": {}
   },
   {
-    "name": "Wojownik",
+    "name": "Chata wojownika",
     "desc": "Szkolenie wojowników",
     "production": 7,
     "requires": ["Kamieniołom"],
@@ -57,7 +57,7 @@
     "name": "Huta",
     "desc": "Pozwala budować na złożach należących do tego miasta kopalnie żelaza.",
     "production": 9,
-    "requires": ["Wojownik"],
+    "requires": ["Chata wojownika"],
     "cost": { "stone": 20, "wood": 30 }
   },
   {

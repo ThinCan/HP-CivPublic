@@ -39,10 +39,15 @@ export class Civilization {
   RemoveEntity(e: Entity) {
     e.Deselect();
     delete e.tile.entity;
-    if (e instanceof Unit) this.units = this.units.filter((t) => t !== e);
-    else this.cities = this.cities.filter((t) => t !== e);
+    if (e instanceof Unit) {
+      this.units = this.units.filter((t) => t !== e);
+    } else {
+      this.cities = this.cities.filter((t) => t !== e);
+      console.log("usuwam maisto");
+    }
     this.queue = this.queue.filter((t) => t !== e);
   }
+
   NextTurn() {
     this.ready = false;
 

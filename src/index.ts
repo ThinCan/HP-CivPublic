@@ -57,17 +57,16 @@ export class Game {
       this.map.tilesArray.filter((t) => t.type === TileType.Ziemia)
     );
 
-    //this.mainCiv.AddEntity(new City(rtile, this.assets.city, this.mainCiv));
     this.mainCiv.AddEntity(
       GetUnitBuilder(
-        Units.find((t) => t.name === "Łucznik"),
+        Units.find((t) => t.name === "Osadnik"),
         this.mainCiv,
         this.map.RandomItem(rtile.GetAdj())
       ).Build()
     );
-    this.mainCiv.AddEntity(
+    this.civilizations[0].AddEntity(
       GetUnitBuilder(
-        Units.find((t) => t.name === "Łucznik"),
+        Units.find((t) => t.name === "Osadnik"),
         this.civilizations[0],
         this.map.RandomItem(rtile.GetAdj())
       ).Build()
@@ -92,7 +91,7 @@ export class Game {
     requestAnimationFrame(() => this.Update());
   }
   NextTurn() {
-    if (this.civilizations.every((t) => t.ready) && this.mainCiv.ready) {
+    if (/* this.civilizations.every((t) => t.ready) && */ this.mainCiv.ready) {
       this.mainCiv.NextTurn();
       this.civilizations.forEach((t) => t.NextTurn());
       this.ui.NextTurn();
@@ -139,10 +138,6 @@ game
   })
   .then(() => {
     game.Start();
-    require("./json/citybuilding.json").forEach((e: any) => {
-      /*     const city = game.mainCiv.cities[0];
-      city.built.push(GetBuildingBuilder(e as IBuildingJson, city).Build() as Building); */
-    });
   });
 
 console.clear();

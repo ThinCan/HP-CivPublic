@@ -64,8 +64,12 @@ export default class Unit extends Entity {
   }
   Move(tile: Tile) {
     if (!this.tilesInRange || !this.tilesInRange.has(tile)) return;
-    if (tile.entity) {
-      tile.entity.civ.RemoveEntity(tile.entity);
+
+    if (tile.city && tile.city.civ !== this.civ) {
+      const city = tile.city;
+      city.civ.RemoveEntity(city);
+      city.civ = this.civ;
+      city.civ.AddEntity(city);
     }
 
     delete this.tile.entity;
@@ -129,7 +133,9 @@ export default class Unit extends Entity {
     const Sum = (total: number = 0, tile: Tile = this.tile) => {
       if (tile.type === TileType.Woda) return;
 
-      if (tile.entity && tile.entity !== this) return
+      if (tile.entity && tile.entity !== this) return;
+      if (tile.city && tile.city.civ !== this.civ && tile.city.defense > 0)
+        return;
 
       if (resmap.has(tile) && total >= resmap.get(tile)) return;
       if (total > this.walkingRange) return;

@@ -17,6 +17,7 @@ export default class City extends Entity {
   timeLeftToGrow: number = 0;
   growthFactor = 0;
   maxCitizens = this._stats.pop;
+  defense: number = 30;
 
   production: Production;
   built: Building[] = [];
@@ -48,8 +49,11 @@ export default class City extends Entity {
   constructor(tile: Tile, img: HTMLImageElement, civ: Civilization) {
     super(tile, img, civ);
     tile.modifier = undefined;
-    [tile, ...tile.GetAdj()].forEach((e) => (e.owner = this));
-    this.tiles = tile.GetAdj();
+    const adj = tile.GetAdj().filter((t) => !t.owner);
+    tile.owner = this;
+    adj.forEach((t) => (t.owner = this));
+
+    this.tiles = adj;
     this.timeLeftToGrow = 0;
     this.name = "Name";
     tile.city = this;
@@ -63,10 +67,10 @@ export default class City extends Entity {
     this.map.c.fillStyle = "white";
     this.map.c.font = "40px Arial";
     this.map.c.fillText(
-      this.stats.pop + " " + this.name,
+      `${this.name}: P: ${this._stats.pop} D: ${this.defense}`,
       this.pos.x,
       this.pos.y - 10,
-      60
+      Tile.size * 2
     );
   }
 
@@ -158,7 +162,7 @@ export default class City extends Entity {
     this.Select();
   }
   ReceiveDamage(amount: number) {
-    
+    this.defense = Math.max(this.defense - amount, 0);
   }
 
   get stats(): Partial<IResources & IData> {
