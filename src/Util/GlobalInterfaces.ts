@@ -44,4 +44,12 @@ export interface IUnitJson extends IProduct {
   defense: number;
   attack: number;
 }
-export interface IBuildingJson extends IProduct {}
+export interface IBuildingJson extends IProduct { }
+
+export interface SerializedTile {
+  type: number,
+  pos: { x: number, y: number },
+  mapPos: { x: number, y: number },
+  displayModifier: boolean,
+  modifier: IModifier
+}

@@ -1,5 +1,6 @@
 import Tile from "../Tile";
 import { Civilization } from "../Civiliziations/Civilization";
+import Unit from "./Unit";
 
 export interface IEntity {
   Update(): void;
@@ -32,11 +33,11 @@ export abstract class Entity implements IEntity {
   abstract ReceiveDamage(amount: number): void;
   protected abstract OnTurn(): void;
 
-  NextTurn(): void {
+  NextTurn(select = true): void {
     this.OnTurn();
 
     if (this.isFree()) this.civ.queue.push(this);
-    if (this.selected && this.civ.main) this.Select();
+    if (this.selected && select) this.Select();
   }
 
   private Draw() {
@@ -61,5 +62,8 @@ export abstract class Entity implements IEntity {
   }
   get tile() {
     return this._tile;
+  }
+  get hashcode() {
+    return `${this.pos.x}${this.pos.y}`
   }
 }

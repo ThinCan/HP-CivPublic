@@ -63,8 +63,7 @@ export default class Unit extends Entity {
     c.fillText(`${this.health}/${this.fullHealth}`, x, y + 30, w);
   }
   Move(tile: Tile) {
-    if (!this.tilesInRange || !this.tilesInRange.has(tile)) return;
-
+    //if (!this.tilesInRange || !this.tilesInRange.has(tile)) return;
     if (tile.city && tile.city.civ !== this.civ) {
       const city = tile.city;
       city.civ.RemoveEntity(city);
@@ -73,9 +72,12 @@ export default class Unit extends Entity {
     }
 
     delete this.tile.entity;
+    const oldTile = this.tile
     this.tile = tile;
     tile.entity = this;
     this.walkingRange -= this.tilesInRange.get(tile);
+
+    this.civ.game.network.MoveUnit(this.civ.id, oldTile.mapPos, tile.mapPos)
 
     this.Deselect();
 
@@ -91,9 +93,9 @@ export default class Unit extends Entity {
 
     this.action && --this.action.turns === 0
       ? (() => {
-          this.action.execute();
-          delete this.action;
-        })()
+        this.action.execute();
+        delete this.action;
+      })()
       : null;
   }
 
@@ -102,6 +104,7 @@ export default class Unit extends Entity {
   }
 
   Select() {
+    if (this.map.game.mainCiv.id !== this.civ.id) return
     if (this.selected && this.tile.city) {
       this.tile.city.Select();
       return;

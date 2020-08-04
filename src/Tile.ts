@@ -102,13 +102,14 @@ export default class Tile {
     this.map.c.fill();
 
     if (this.displayModifier && this._modifier !== undefined) {
-      this.map.c.drawImage(
-        Tile.modifierImgs.get(this.modifier.img),
-        this.pos.x - Tile.sizet,
-        this.pos.y - Tile.sizet,
-        Tile.sizet * 2,
-        Tile.sizet * 2
-      );
+      if (Tile.modifierImgs.has(this._modifier.img))
+        this.map.c.drawImage(
+          Tile.modifierImgs.get(this.modifier.img),
+          this.pos.x - Tile.sizet,
+          this.pos.y - Tile.sizet,
+          Tile.sizet * 2,
+          Tile.sizet * 2
+        );
     }
 
     if (this.owner || this.selected) this.DrawBorder();
@@ -205,6 +206,15 @@ export default class Tile {
   Deselect() {
     delete this.selected;
   }
+  Serialize() {
+    return {
+      type: this.type,
+      pos: this.pos,
+      mapPos: this.mapPos,
+      displayModifier: this.displayModifier,
+      modifier: this._modifier
+    }
+  }
   set type(t: TileType) {
     this._type = t;
     let data!: TileData;
@@ -252,15 +262,13 @@ export default class Tile {
       this._modifier = undefined;
       return;
     }
+    this._modifier = value
 
-    if (Tile.modifierImgs.has(value.img)) {
-      this._modifier = value;
-    } else {
+    if (!Tile.modifierImgs.has(value.img)) {
       const img = new Image();
       img.src = `./img/modifiers/${value.img}.png`;
       img.onload = () => {
         Tile.modifierImgs.set(value.img, img);
-        this._modifier = value;
       };
     }
   }

@@ -6,63 +6,53 @@ import { Game } from "..";
 import { IResources } from "../Util/GlobalInterfaces";
 import { Civilization } from "../Civiliziations/Civilization";
 import { Entity } from "../Entity/Entity";
-
-interface UIItems {
-  actionLog: HTMLElement;
-  resources: {
-    money: { container: HTMLSpanElement; income: HTMLSpanElement };
-    wood: { container: HTMLSpanElement; income: HTMLSpanElement };
-    stone: { container: HTMLSpanElement; income: HTMLSpanElement };
-    iron: { container: HTMLSpanElement; income: HTMLSpanElement };
-    horse: { container: HTMLSpanElement; income: HTMLSpanElement };
-    mineral: { container: HTMLElement; income: HTMLSpanElement };
-  };
-  turn: HTMLSpanElement;
-}
+import LoginScreen from "./LoginScreen";
 
 export class UI {
-  private uiitems: UIItems;
+  private uiitems = {
+    actionLog: getElement("#action-log"),
+    resources: {
+      money: {
+        container: getElement("#res-gold"),
+        income: getElement("#res-gold-p"),
+      },
+      wood: {
+        container: getElement("#res-wood"),
+        income: getElement("#res-wood-p"),
+      },
+      stone: {
+        container: getElement("#res-stone"),
+        income: getElement("#res-stone-p"),
+      },
+      iron: {
+        container: getElement("#res-iron"),
+        income: getElement("#res-iron-p"),
+      },
+      horse: {
+        container: getElement("#res-horse"),
+        income: getElement("#res-horse-p"),
+      },
+      mineral: {
+        container: getElement("#res-mineral"),
+        income: getElement("#res-mineral-p"),
+      },
+    },
+    turn: getElement("#res-turn"),
+
+    gameContainer: getElement(".game-container")
+  }
   private _turn = 1;
   private selectedEntity: Entity;
 
   private cityScreen = new CityScreen();
   private unitScreen = new UnitScreen();
+  public loginScreen = new LoginScreen(this);
 
   constructor(public game: Game) {
-    this.uiitems = {
-      actionLog: getElement("#action-log"),
-      resources: {
-        money: {
-          container: getElement("#res-gold"),
-          income: getElement("#res-gold-p"),
-        },
-        wood: {
-          container: getElement("#res-wood"),
-          income: getElement("#res-wood-p"),
-        },
-        stone: {
-          container: getElement("#res-stone"),
-          income: getElement("#res-stone-p"),
-        },
-        iron: {
-          container: getElement("#res-iron"),
-          income: getElement("#res-iron-p"),
-        },
-        horse: {
-          container: getElement("#res-horse"),
-          income: getElement("#res-horse-p"),
-        },
-        mineral: {
-          container: getElement("#res-mineral"),
-          income: getElement("#res-mineral-p"),
-        },
-      },
-      turn: getElement("#res-turn"),
-    };
-
     getElement(".actions-turn").onclick = () => {
       game.NextTurn();
     };
+    this.uiitems.gameContainer.style.display = "none"
   }
 
   ShowUnit(unit: Unit) {

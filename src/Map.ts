@@ -1,7 +1,7 @@
 import Tile, { TileType } from "./Tile";
 import { Game } from ".";
 import * as TileModifier from "./json/modifiers.json";
-import { IModifier } from "./Util/GlobalInterfaces";
+import { IModifier, SerializedTile } from "./Util/GlobalInterfaces";
 
 interface IMouseCords {
   clientX: number;
@@ -222,7 +222,7 @@ export default class Map {
   }
 
   GenerateResources(arr: Tile[], res: IModifier, size = 0.07) {
-    for (let i = 0; i < Math.ceil(arr.length * size); ) {
+    for (let i = 0; i < Math.ceil(arr.length * size);) {
       const tile = this.RandomItem(arr);
       if (tile.modifier) continue;
       tile.modifier = res;
@@ -253,6 +253,14 @@ export default class Map {
         ox: this.translate.x,
         oy: this.translate.y,
       };
+    }
+  }
+  LoadMap(map: SerializedTile[]) {
+    for (const tile of map) {
+      const { x: mx, y: my } = tile.mapPos
+      this.tiles[mx][my].type = tile.type
+      this.tiles[mx][my].modifier = tile.modifier
+      this.tiles[mx][my].displayModifier = tile.displayModifier
     }
   }
 }

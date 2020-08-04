@@ -75,6 +75,8 @@ export default class City extends Entity {
   }
 
   Select() {
+    if(this.map.game.mainCiv.id !== this.civ.id) return;
+    
     this.civ.DeselectLastEntity();
     this.civ.game.ui.ShowCity(this);
     this.civ.game.map.Focus(this.pos);

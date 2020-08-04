@@ -4,10 +4,22 @@ import { Game } from "..";
 import { Entity } from "../Entity/Entity";
 import { IResources, IData } from "../Util/GlobalInterfaces";
 
-export class Civilization {
-  static id = 0;
+function addEntityDec() {
+  return function (prot: any, name: string, desc: PropertyDescriptor) {
+    const ori = desc.value
+    desc.value = function (e: Entity, send = true) {
 
-  ready = false;
+      if (send) {
+        if (e instanceof Unit) this.game.network.CreateUnit(e)
+      }
+
+      return (<Function>ori).call(this, e, send)
+    }
+  }
+}
+
+export class Civilization {
+  private _ready = false;
   queue: Entity[] = [];
   units: Unit[] = [];
   cities: City[] = [];
@@ -20,21 +32,19 @@ export class Civilization {
     mineral: 0,
   };
 
-  id: number;
   constructor(
     public game: Game,
     public name: string,
     public color: string,
-    public main = false
-  ) {
-    this.id = Civilization.id++;
-  }
+    public id: number
+  ) { }
 
-  AddEntity(e: Entity) {
+  @addEntityDec()
+  AddEntity(e: Entity, broadcast = true) {
     if (e instanceof Unit) this.units.push(e);
     else if (e instanceof City) this.cities.push(e);
+    this.queue.push(e)
 
-    if (this.main) e.Select();
   }
   RemoveEntity(e: Entity) {
     e.Deselect();
@@ -48,7 +58,7 @@ export class Civilization {
     this.queue = this.queue.filter((t) => t !== e);
   }
 
-  NextTurn() {
+  NextTurn(select = true) {
     this.ready = false;
 
     const res = this.GetResourceIncome();
@@ -58,15 +68,14 @@ export class Civilization {
       this.resources[key] += res[key];
     }
 
-    [...this.units, ...this.cities].forEach((e) => e.NextTurn());
+    [...this.units, ...this.cities].forEach((e) => e.NextTurn(select));
   }
   NextAction() {
     if (this.queue.length === 0) {
       this.DeselectLastEntity();
       this.ready = true;
     } else {
-      const e = this.queue.pop();
-      if (this.main && e) e.Select();
+      this.queue.pop()?.Select()
     }
   }
   Update() {
@@ -96,4 +105,9 @@ export class Civilization {
       { mineral: this.resources.mineral } as Partial<IData & IResources>
     );
   }
+  set ready(val: boolean) {
+    this._ready = val
+    this.game.network.SetReady(this.id, this.ready)
+  }
+  get ready() { return this._ready }
 }

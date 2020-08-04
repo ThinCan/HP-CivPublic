@@ -1,13 +1,7 @@
 import Map from "./Map";
 import { UI } from "./UI/UI";
 import { Civilization } from "./Civiliziations/Civilization";
-import { TileType } from "./Tile";
-import City from "./Entity/City";
-import { GetUnitBuilder } from "./Builders/Units";
-import * as Units from "./json/units.json";
-import { GetBuildingBuilder } from "./Builders/Buildings";
-import { IBuildingJson } from "./Util/GlobalInterfaces";
-import { Building } from "./Builders/Builder";
+import NetworkManager from "./NetworkManager";
 
 export interface IAsset {
   Osadnik: HTMLImageElement;
@@ -33,14 +27,17 @@ export class Game {
 
   map: Map;
   ui: UI;
+  network: NetworkManager
 
   mainCiv: Civilization;
-  private civilizations: Civilization[] = [];
+   civilizations: Civilization[] = [];
 
   constructor(public size: { x: number; y: number }) {
     this.canvas = document.querySelector("canvas");
     this.c = this.canvas.getContext("2d", { alpha: false });
     this.ui = new UI(this);
+    this.map = new Map(this, this.size.x, this.size.y);
+    this.network = new NetworkManager(this)
     window.onresize = () => {
       this.canvas.width = document.body.clientWidth;
       this.canvas.height = document.body.clientHeight - 200;
@@ -49,28 +46,6 @@ export class Game {
   }
 
   async Start() {
-    this.map = new Map(this, this.size.x, this.size.y);
-    this.mainCiv = new Civilization(this, "fornal", "red", true);
-    this.AddCiv(new Civilization(this, "asd", "purple"));
-
-    const rtile = this.map.RandomItem(
-      this.map.tilesArray.filter((t) => t.type === TileType.Ziemia)
-    );
-
-    this.mainCiv.AddEntity(
-      GetUnitBuilder(
-        Units.find((t) => t.name === "Osadnik"),
-        this.mainCiv,
-        this.map.RandomItem(rtile.GetAdj())
-      ).Build()
-    );
-    this.civilizations[0].AddEntity(
-      GetUnitBuilder(
-        Units.find((t) => t.name === "Osadnik"),
-        this.civilizations[0],
-        this.map.RandomItem(rtile.GetAdj())
-      ).Build()
-    );
     this.Update();
   }
   private Update() {
@@ -91,7 +66,9 @@ export class Game {
     requestAnimationFrame(() => this.Update());
   }
   NextTurn() {
-    if (/* this.civilizations.every((t) => t.ready) && */ this.mainCiv.ready) {
+    if (!this.mainCiv) return;
+
+    if (this.civilizations.every((t) => t.ready) && this.mainCiv.ready) {
       this.mainCiv.NextTurn();
       this.civilizations.forEach((t) => t.NextTurn());
       this.ui.NextTurn();
@@ -136,9 +113,9 @@ game
     Rycerz: "units/knight",
     Rydwan: "units/chariot",
   })
-  .then(() => {
-    game.Start();
-  });
-
+/* 
 console.clear();
 console.warn("ADD IMAGE FOR TARAN!!");
+
+
+ */
