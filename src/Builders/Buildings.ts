@@ -1,14 +1,14 @@
 import { Building, IBuilder } from "./Builder";
 import City from "../Entity/City";
 import { IBuildingJson } from "../Util/GlobalInterfaces";
-import * as UnitsJSON from "../json/units.json";
+import UnitsJSON from "../json/units.json";
 
 function FindUnitInJSON(name: string) {
   return UnitsJSON.find((e) => e.name === name);
 }
 
 export abstract class BuildingBuilder implements IBuilder {
-  constructor(public data: IBuildingJson, public city: City) {}
+  constructor(public data: IBuildingJson, public city: City) { }
   abstract Build(): Building;
 }
 //#region builders
@@ -160,7 +160,8 @@ class Mason extends BuildingBuilder {
 }
 class Wall_1 extends BuildingBuilder {
   Build() {
-    this.city.defense += 50;
+    // -50, bo wtedy zamiast odjac, to doda
+    this.city.ReceiveDamage(-50)
     return new Building(() => ({}), this.data);
   }
 }

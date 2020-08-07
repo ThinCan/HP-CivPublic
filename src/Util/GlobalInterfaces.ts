@@ -1,4 +1,6 @@
 import Tile from "../Tile";
+import City, { TAssignedCitizen } from "../Entity/City";
+import { Production } from "../Builders/Builder";
 
 export interface IData {
   prod: number;
@@ -52,4 +54,19 @@ export interface SerializedTile {
   mapPos: { x: number, y: number },
   displayModifier: boolean,
   modifier: IModifier
+}
+
+export interface SerializedCity {
+  mapPos: {x: number, y: number},
+  tiles: {x: number, y: number}[],
+  stats: {pop: number, food: number},
+  defense: number,
+  prod: string,
+  built: string[],
+  available: string[],
+  assignedCitizens: TAssignedCitizen,
+  resourceBuildings: IResources,
+  growthFactor: number,
+  maxCitizens: number,
+  timeLeftToGrow: number
 }

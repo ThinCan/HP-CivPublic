@@ -1,7 +1,7 @@
 import City from "../Entity/City";
 import { IProduct } from "../Util/GlobalInterfaces";
-import * as BuildingsJSON from "../json/citybuilding.json";
-import * as UnitsJSON from "../json/units.json";
+import  BuildingsJSON from "../json/citybuilding.json";
+import  UnitsJSON from "../json/units.json";
 
 export class ZadupiusCity extends City {
   AddAvailable(e: IProduct) {

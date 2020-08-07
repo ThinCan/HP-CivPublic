@@ -1,50 +1,54 @@
 import io from "socket.io-client"
-import { SerializedTile } from "./Util/GlobalInterfaces"
+import { SerializedTile, SerializedCity } from "./Util/GlobalInterfaces"
 import { Game } from "."
 import { Civilization } from "./Civiliziations/Civilization"
 import Unit from "./Entity/Unit"
 import { GetUnitBuilder } from "./Builders/Units"
 import UnitsJSON from "./json/units.json"
 import { TileType } from "./Tile"
+import City from "./Entity/City"
 
 export default class NetworkManager {
     private socket: SocketIOClient.Socket
     private url = "http://localhost:4000/"
+    private roomcode: string
 
     constructor(private game: Game) {
         this.socket = io(this.url)
-        this.socket.on("creategameerror", (error: string) => {
-            game.ui.loginScreen.AppendToNotif(error)
-        })
 
-        this.socket.on("gameready", (civs: { civname: string, id: number }[]) => {
-            for (const c in civs) {
-                const civ = civs[c]
-                if (civ.id === game.mainCiv.id) continue
-                game.AddCiv(new Civilization(game, civ.civname, "yellow", civ.id))
+        this.socket.on("gameready", (id: number, map: SerializedTile[], civs: { civname: string, id: number }[], code: string) => {
+            this.roomcode = code
+            console.log(id)
+
+            const pickedCiv = game.ui.loginScreen.pickedCiv
+
+            game.mainCiv = new Civilization(game, pickedCiv.civname, pickedCiv.color, id)
+            for (const c of civs) {
+                game.AddCiv(new Civilization(game, c.civname, "yellow", c.id))
             }
+
+            game.map.LoadMap(map)
 
             const tiles = game.map.tilesArray.filter(t => t.type !== TileType.Woda)
             const tile = game.map.RandomItem(tiles)
-            game.mainCiv.AddEntity(GetUnitBuilder(UnitsJSON[0], game.mainCiv, tile).Build())
+            game.mainCiv.AddEntity(GetUnitBuilder(UnitsJSON.find(t => t.name === "Osadnik"), game.mainCiv, tile).Build())
 
             game.ui.loginScreen.Close()
             game.Start()
         })
-        this.socket.on("joinedgame", (data: { map: SerializedTile[], id: number }) => {
-            console.log(data.id)
-            this.ReceiveMap(data.map)
-            const civ = game.ui.loginScreen.pickedCiv
-            game.mainCiv = new Civilization(game, civ.leader, civ.color, data.id)
-        })
-        this.socket.on("createunit", (id: number, pos: { x: number, y: number }, name: string) => this.AddUnit(id, pos, name))
-        this.socket.on("setready", (id: number, val: boolean) => this.SetReady(id, val, false))
+
         this.socket.on("moveunit", (id: number, oldPos: { x: number, y: number }, newPos: { x: number, y: number }) => this.MoveUnit(id, oldPos, newPos, false))
+        this.socket.on("turn", () => this.NextTurn())
+        this.socket.on("createunit", (id: number, pos: { x: number, y: number }, name: string) => this.CreateUnit(id, pos, name, false))
+        this.socket.on("createcity", (id: number, pos: { x: number, y: number }) => this.CreateCity(id, pos, false))
+        this.socket.on("removeunit", (id: number, pos: { x: number, y: number }) => this.RemoveUnit(id, pos, false))
+        this.socket.on("removecity", (id: number, pos: { x: number, y: number }) => this.RemoveCity(id, pos, false))
+        this.socket.on("receivedamage", (id: number, pos: { x: number, y: number }, value: number) => this.ReceiveDamage(id, pos, value, false))
+        this.socket.on("updatetile", (data: SerializedTile) => this.UpdateTile(data, false))
+        this.socket.on("updatecity", (data: SerializedCity) => this.UpdateCity(data, false))
+
     }
 
-    private ReceiveMap(map: SerializedTile[]) {
-        this.game.map.LoadMap(map)
-    }
     CreateGame(players: number, code: string, map: SerializedTile[]) {
         if (!this.game.ui.loginScreen.pickedCiv) return
         this.socket.emit("creategame", { players, code, map, civname: this.game.ui.loginScreen.pickedCiv.civname })
@@ -52,31 +56,72 @@ export default class NetworkManager {
     JoinGame(code: string, pickedCiv: string) {
         this.socket.emit("joingame", code, pickedCiv)
     }
-    CreateUnit(unit: Unit) {
-        this.socket.emit("createunit", this.game.mainCiv.id, unit.tile.mapPos, unit.data.name)
+    CreateUnit(id: number, pos: { x: number, y: number }, name: string, send = true) {
+        if (send) this.socket.emit("createunit", this.roomcode, this.game.mainCiv.id, pos, name)
+        else {
+            const civ = this.game.civilizations.find(t => t.id === id);
+            const tile = this.game.map.tiles[pos.x][pos.y]
+            civ.AddEntity(GetUnitBuilder(UnitsJSON.find(t => t.name === name), civ, tile).Build(), false)
+        }
     }
-    AddUnit(id: number, pos: { x: number, y: number }, name: string) {
-        console.log("dodaje")
-        const civ = this.game.civilizations.find(t => t.id === id)
-        const tile = this.game.map.tiles[pos.x][pos.y]
-        civ.AddEntity(GetUnitBuilder(UnitsJSON.find(t => t.name === name), civ, tile).Build(), false)
+    CreateCity(id: number, pos: { x: number, y: number }, send = true) {
+        if (send) this.socket.emit("createcity", this.roomcode, this.game.mainCiv.id, pos)
+        else {
+            const civ = this.game.civilizations.find(t => t.id === id);
+            const tile = this.game.map.tiles[pos.x][pos.y]
+            civ.AddEntity(new City(tile, this.game.assets.Miasto, civ), false)
+        }
+    }
+    RemoveUnit(id: number, pos: { x: number, y: number }, send = true) {
+        if (send) this.socket.emit("removeunit", this.roomcode, this.game.mainCiv.id, pos)
+        else {
+            const civ = this.game.civilizations.find(t => t.id === id);
+            const tile = this.game.map.tiles[pos.x][pos.y]
+            civ.RemoveEntity(tile.entity, false)
+        }
+    }
+    RemoveCity(id: number, pos: { x: number, y: number }, send = true) {
+        if (send) this.socket.emit("removecity", this.roomcode, this.game.mainCiv.id, pos)
+        else {
+            const civ = this.game.civilizations.find(t => t.id === id);
+            const tile = this.game.map.tiles[pos.x][pos.y]
+            civ.RemoveEntity(tile.city, false)
+        }
     }
     MoveUnit(id: number, oldPos: { x: number, y: number }, newPos: { x: number, y: number }, send = true) {
-        console.log(oldPos, newPos)
-        if (send) this.socket.emit("moveunit", id, oldPos, newPos)
+        if (send) this.socket.emit("moveunit", this.roomcode, id, oldPos, newPos)
         else {
-            console.log("ruszam sie", id)
             const oldTile = this.game.map.tiles[oldPos.x][oldPos.y]
             const newTile = this.game.map.tiles[newPos.x][newPos.y]
             const unit = this.game.civilizations.find(t => t.id === id).units.find(t => t.tile === oldTile)
             delete unit.tile.entity
             unit.tile = newTile
+            newTile.entity = unit
         }
     }
-    SetReady(id: number, val: boolean, send = true) {
-        try {
-            if (send === true) this.socket.emit("setready", id, val)
-            else if (id !== this.game.mainCiv.id) this.game.civilizations.find(t => t.id === id).ready = val
-        } catch (e) { console.log("blad w", id, val, send) }
+    SetReady(id: number, val: boolean) {
+        this.socket.emit("setready", this.roomcode, id, val)
+    }
+    NextTurn() {
+        console.log("nowa tura")
+        this.game.NextTurn()
+    }
+    ReceiveDamage(id: number, pos: { x: number, y: number }, value: number, send = true) {
+        if (send) this.socket.emit("receivedamage", this.roomcode, id, pos, value)
+        else {
+            //const units = this.game.civilizations.find(t => t.id === id).units
+            const unit = this.game.map.tiles[pos.x][pos.y].entity
+            unit.ReceiveDamage(value, false)
+        }
+    }
+    UpdateTile(data: SerializedTile, send = true) {
+        if (send) this.socket.emit("updatetile", this.roomcode, data)
+        else this.game.map.LoadTile(data)
+    }
+    UpdateCity(data: SerializedCity, send = true) {
+        if (send) this.socket.emit("updatecity", this.roomcode, data)
+        else {
+            this.game.map.tiles[data.mapPos.x][data.mapPos.y].city.UpdateData(data)
+        }
     }
 }

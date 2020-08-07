@@ -11,59 +11,90 @@ app.listen(3500)
 
 
 const rooms = new Map()
-const maps = new Map()
-const ids = new Map()
+
+function Room(code, map, playerCount) {
+  this.map = map
+  this.civs = []
+  this.sockets = new Map()
+  this.code = code
+  this.playerCount = playerCount
+  this.id = 0
+  this.started = false
+}
+
+Room.prototype.Join = function (socket, civname) {
+  socket.join(this.code)
+  this.sockets.set(this.id, socket)
+  this.civs.push({ civname, id: this.id++, ready: false })
+  this.Start()
+}
+Room.prototype.Start = function () {
+  if (this.civs.length !== this.playerCount) return;
+  this.started = true
+
+  for (const civ of this.civs) {
+    io.to(this.sockets.get(civ.id).id).emit("gameready", civ.id, this.map, this.civs.filter(t => t.id !== civ.id), this.code)
+  }
+}
 
 io.on("connection", (socket) => {
-  socket.on("creategame", ({ players, code, map, civname }) => {
-    if (rooms.has(code)) { socket.emit("creategameerror", "Pokój już istnieje"); return }
-    console.log("tworze pokoj o id: " + code)
-    socket.join(code)
-    rooms.set(code, { sockets: [socket.id], civs: [{ civname, id: 0 }], players })
-    maps.set(code, map)
-    ids.set(code, 0)
-    socket.emit("joinedgame", { map: maps.get(code), id: ids.get(code) })
-    ids.set(code, ids.get(code) + 1)
 
-    if (rooms.get(code).sockets.length === rooms.get(code).players)
-      socket.emit("gameready", rooms.get(code).civs)
+  socket.on("creategame", ({ players, code, map, civname }) => {
+    if (rooms.has(code)) return;
+    console.log(code)
+    rooms.set(code, new Room(code, map, players))
+    rooms.get(code).Join(socket, civname)
   })
   socket.on("joingame", (code, civname) => {
-    if (!rooms.has(code)) return
-    if (rooms.get(code).sockets.length === rooms.get(code).players) return;
-    socket.join(code)
-    socket.emit("joinedgame", { map: maps.get(code), id: ids.get(code) })
-    rooms.get(code).sockets.push(socket.id)
-    rooms.get(code).civs.push({ civname, id: ids.get(code) })
+    if (!rooms.has(code) || rooms.get(code).started) return
+    rooms.get(code).Join(socket, civname)
+  })
 
-    if (rooms.get(code).sockets.length === rooms.get(code).players)
-      io.in(code).emit("gameready", rooms.get(code).civs)
-    ids.set(code, ids.get(code) + 1)
+  socket.on("createunit", (code, civid, unitpos, unitname) => {
+    console.log("Tworze jednostke ", unitname)
+    socket.to(code).emit("createunit", civid, unitpos, unitname)
   })
-  socket.on("createunit", (id, pos, name) => {
-    const code = [...rooms.keys()].find(t => rooms.get(t).sockets.includes(socket.id))
-    console.log("wysylam", code)
-    socket.to(code).emit("createunit", id, pos, name)
+  socket.on("createcity", (code, civid, unitpos) => {
+    console.log("Tworze Miasto")
+    socket.to(code).emit("createcity", civid, unitpos)
   })
-  socket.on("setready", (id, val) => {
-    const code = [...rooms.keys()].find(t => rooms.get(t).sockets.includes(socket.id))
-    socket.to(code).emit("setready", id, val)
+  socket.on("removeunit", (code, civid, unitpos) => {
+    console.log("Usuwam jednostke ")
+    socket.to(code).emit("removeunit", civid, unitpos)
   })
-  socket.on("moveunit", (id, op, np) => {
-    const code = [...rooms.keys()].find(t => rooms.get(t).sockets.includes(socket.id))
-    console.log(op, np)
-    socket.to(code).emit("moveunit", id, op, np)
+  socket.on("removecity", (code, civid, unitpos) => {
+    console.log("Usuwam miasto")
+    socket.to(code).emit("removecity", civid, unitpos)
   })
+  socket.on("setready", (code, id, val) => {
+    const civ = rooms.get(code).civs.find(t => t.id === id)
+    civ.ready = val
+    if (rooms.get(code).civs.every(t => t.ready)) io.to(code).emit("turn")
+  })
+  socket.on("moveunit", (code, civid, oldPos, newPos) => {
+    socket.to(code).emit("moveunit", civid, oldPos, newPos)
+  })
+
+  socket.on("receivedamage", (code, civid, pos, value) => {
+    socket.to(code).emit("receivedamage", civid, pos, value)
+  })
+  socket.on("updatetile", (code, data) => {
+    socket.to(code).emit("updatetile", data)
+  })
+  socket.on("updatecity", (code, data) => {
+    socket.to(code).emit("updatecity", data)
+  })
+
 
   socket.on("disconnecting", () => {
+
     const srooms = Object.keys(socket.rooms)
     for (const room of srooms) {
       if (!rooms.get(room)) continue;
-      if (rooms.get(room).sockets.length <= 1) {
+      rooms.get(room).id--
+      if (rooms.get(room).id === 0) {
         console.log("usuwam pokoj", room)
         rooms.delete(room)
-        maps.delete(room)
-        ids.delete(room)
         console.log("pozostale pokoje: ", rooms.keys())
       }
     }

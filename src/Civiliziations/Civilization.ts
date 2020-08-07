@@ -8,9 +8,23 @@ function addEntityDec() {
   return function (prot: any, name: string, desc: PropertyDescriptor) {
     const ori = desc.value
     desc.value = function (e: Entity, send = true) {
+      if (send) {
+        if (e instanceof Unit) this.game.network.CreateUnit(this.id, e.tile.mapPos, e.data.name)
+        else if (e instanceof City) this.game.network.CreateCity(this.id, e.tile.mapPos)
+      }
+
+      return (<Function>ori).call(this, e, send)
+    }
+  }
+}
+function removeEntityDec() {
+  return function (prot: any, name: string, desc: PropertyDescriptor) {
+    const ori = desc.value
+    desc.value = function (e: Entity, send = true) {
 
       if (send) {
-        if (e instanceof Unit) this.game.network.CreateUnit(e)
+        if (e instanceof Unit) this.game.network.RemoveUnit(this.id, e.tile.mapPos)
+        else if (e instanceof City) this.game.network.RemoveCity(this.id, e.tile.mapPos)
       }
 
       return (<Function>ori).call(this, e, send)
@@ -46,8 +60,9 @@ export class Civilization {
     this.queue.push(e)
 
   }
-  RemoveEntity(e: Entity) {
-    e.Deselect();
+  @removeEntityDec()
+  RemoveEntity(e: Entity, broadcast = true) {
+    e?.Deselect();
     delete e.tile.entity;
     if (e instanceof Unit) {
       this.units = this.units.filter((t) => t !== e);

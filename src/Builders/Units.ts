@@ -4,7 +4,7 @@ import Tile from "../Tile";
 import Unit, { IUnitAction } from "../Entity/Unit";
 import { Civilization } from "../Civiliziations/Civilization";
 import { IBuilder } from "./Builder";
-import * as TileModifier from "../json/modifiers.json";
+import TileModifier from "../json/modifiers.json";
 import { IAsset } from "..";
 
 function GetMeleeAttack(unit: Unit) {
@@ -61,14 +61,14 @@ export abstract class UnitBuilder implements IBuilder {
     public data: IUnitJson,
     public civ: Civilization,
     public dest: Tile
-  ) {}
+  ) { }
   private GetUnit(img: keyof IAsset) {
     return new Unit(this.dest, this.assets[img], this.civ, this.data);
   }
 
   protected abstract GetUnitActions(unit: Unit): IUnitAction[];
   protected abstract GetUnitName(): keyof IAsset;
-  protected OnBeforeBuild(unit: Unit) {}
+  protected OnBeforeBuild(unit: Unit) { }
   protected CreateUnitAction(
     desc: string,
     callback: () => void,

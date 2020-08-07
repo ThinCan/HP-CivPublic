@@ -1,9 +1,19 @@
 import Map from "./Map";
 import { Astar } from "./Util/Pathfind";
-import * as JSONTileData from "./json/tiledata.json";
+import JSONTileData from "./json/tiledata.json";
 import Unit from "./Entity/Unit";
 import { IModifier, IAdjTiles } from "./Util/GlobalInterfaces";
 import City from "./Entity/City";
+import NetworkManager from "./NetworkManager";
+
+function updateTile(tile: Tile, name: string, desc: PropertyDescriptor) {
+  const ori = desc.value
+
+  desc.value = function (...args: any[]) {
+    (this.map.game.network as NetworkManager).UpdateTile(this.Serialize());
+    (<Function>ori).apply(this, args)
+  }
+}
 
 export interface TileData {
   weight: number;

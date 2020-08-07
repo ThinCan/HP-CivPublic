@@ -10,6 +10,25 @@ export interface IUnitAction {
   id?: number;
 }
 
+function moveDecorator(unit: Unit, name: string, desc: PropertyDescriptor) {
+  const original = desc.value
+  desc.value = function (...args: any[]) {
+    const _this = this as Unit
+    const oldTile = _this.tile
+    this.civ.game.network.MoveUnit(this.civ.id, oldTile.mapPos, args[0].mapPos);
+    (<Function>original).apply(this, args)
+  }
+}
+function damageDecorator(unit: Unit, name: string, desc: PropertyDescriptor) {
+  const original = desc.value
+  desc.value = function (value: number, send = true) {
+    const _this = this as Unit
+    if (send)
+      this.civ.game.network.ReceiveDamage(this.civ.id, _this.tile.mapPos, value);
+    (<Function>original).call(this, value, send)
+  }
+}
+
 export default class Unit extends Entity {
   static walkingRange = 2;
 
@@ -62,8 +81,9 @@ export default class Unit extends Entity {
     c.textAlign = "left";
     c.fillText(`${this.health}/${this.fullHealth}`, x, y + 30, w);
   }
+
+  @moveDecorator
   Move(tile: Tile) {
-    //if (!this.tilesInRange || !this.tilesInRange.has(tile)) return;
     if (tile.city && tile.city.civ !== this.civ) {
       const city = tile.city;
       city.civ.RemoveEntity(city);
@@ -72,12 +92,9 @@ export default class Unit extends Entity {
     }
 
     delete this.tile.entity;
-    const oldTile = this.tile
     this.tile = tile;
     tile.entity = this;
     this.walkingRange -= this.tilesInRange.get(tile);
-
-    this.civ.game.network.MoveUnit(this.civ.id, oldTile.mapPos, tile.mapPos)
 
     this.Deselect();
 
@@ -161,7 +178,9 @@ export default class Unit extends Entity {
     this._actionTiles = tiles;
     tiles.forEach((t) => t.Select({ entity: this, color }));
   }
-  ReceiveDamage(amount: number) {
+
+  @damageDecorator
+  ReceiveDamage(amount: number, send = true) {
     this._health -= +(amount / this.defense).toFixed(2);
     if (this.health <= 0) this.civ.RemoveEntity(this);
   }

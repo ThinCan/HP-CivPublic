@@ -1,6 +1,6 @@
 import Tile, { TileType } from "./Tile";
 import { Game } from ".";
-import * as TileModifier from "./json/modifiers.json";
+import TileModifier from "./json/modifiers.json";
 import { IModifier, SerializedTile } from "./Util/GlobalInterfaces";
 
 interface IMouseCords {
@@ -112,7 +112,7 @@ export default class Map {
   }
   private onKeyPress(ev: KeyboardEvent) {
     const k = ev.key.toLowerCase();
-    if (k === " ") this.game.NextTurn();
+    if (k === " ") this.game.MainCivAction();
   }
   private onMouseDown({ clientX, clientY }: IMouseCords) {
     this.isMouseDragging = false;
@@ -262,5 +262,8 @@ export default class Map {
       this.tiles[mx][my].modifier = tile.modifier
       this.tiles[mx][my].displayModifier = tile.displayModifier
     }
+  }
+  LoadTile(data: SerializedTile) {
+    this.LoadMap([data])
   }
 }

@@ -30,7 +30,7 @@ export class Game {
   network: NetworkManager
 
   mainCiv: Civilization;
-   civilizations: Civilization[] = [];
+  civilizations: Civilization[] = [];
 
   constructor(public size: { x: number; y: number }) {
     this.canvas = document.querySelector("canvas");
@@ -65,16 +65,14 @@ export class Game {
 
     requestAnimationFrame(() => this.Update());
   }
+  MainCivAction() {
+    this.mainCiv.NextAction()
+  }
   NextTurn() {
-    if (!this.mainCiv) return;
-
-    if (this.civilizations.every((t) => t.ready) && this.mainCiv.ready) {
-      this.mainCiv.NextTurn();
-      this.civilizations.forEach((t) => t.NextTurn());
-      this.ui.NextTurn();
-    } else {
-      this.mainCiv.NextAction();
-    }
+    this.mainCiv.NextTurn();
+    this.civilizations.forEach((t) => t.NextTurn());
+    this.ui.NextTurn();
+    this.mainCiv.NextAction()
   }
   AddCiv(civ: Civilization) {
     this.civilizations.push(civ);
@@ -113,7 +111,7 @@ game
     Rycerz: "units/knight",
     Rydwan: "units/chariot",
   })
-/* 
+/*
 console.clear();
 console.warn("ADD IMAGE FOR TARAN!!");
 
