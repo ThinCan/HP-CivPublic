@@ -133,6 +133,16 @@
     }
   },
   {
+    "name": "Kondominium pod żydowskim zarządem powierniczym",
+    "desc": "Międzynarodowe szlaki handlowe dają dodatkową produkcję i złoto, daje 1 kupca. (Nie ma jeszcze kupcow, wiec...)",
+    "production": 25,
+    "requires": ["Sklep"],
+    "cost": {
+      "stone": 30,
+      "wood": 30
+    }
+  },
+  {
     "name": "Targowisko",
     "desc": "+6 do produkcji żywności, +5 do złota",
     "production": 28,
@@ -328,5 +338,12 @@
       "nitre": 30,
       "iron": 30
     }
+  },
+  {
+    "name": "Stocznia",
+    "desc": "Pozwala budowac statki",
+    "production": 50,
+    "requires": ["Drwal"],
+    "cost": {"wood": 10}
   }
 ]

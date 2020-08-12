@@ -1,8 +1,9 @@
 import { getElement, IScreen } from "./UI";
 import City from "../Entity/City";
-import { IProduct, IResources } from "../Util/GlobalInterfaces";
+import { IProduct, IResources, IUnitJson } from "../Util/GlobalInterfaces";
 import { GetUnitBuilder } from "../Builders/Units";
 import { GetBuildingBuilder } from "../Builders/Buildings";
+import { IAsset } from "..";
 
 interface ICounter {
   count: HTMLElement;
@@ -137,7 +138,7 @@ export default class CityScreen implements IScreen {
   private addCallbacksToCitizenManagment(city: City) {
     for (const key in this.uielements.citizens) {
       //@ts-ignore
-      if (!("dec" in this.uielements.citizens[key]) ) continue;
+      if (!("dec" in this.uielements.citizens[key])) continue;
       //@ts-ignore
       this.uielements.citizens[key].inc.onclick = () => {
         //@ts-ignore
@@ -183,8 +184,8 @@ export default class CityScreen implements IScreen {
       this.uielements.buildButton.onclick = () => {
         this.uielements.buildButton.classList.remove("show");
         const builder =
-          "health" in item
-            ? GetUnitBuilder(item, city.civ, city.tile)
+          "health" in (item as IProduct)
+            ? GetUnitBuilder(item.name as keyof IAsset, city.civ, city.tile)
             : GetBuildingBuilder(item, city);
         city.Build(builder);
       };

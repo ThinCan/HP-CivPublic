@@ -2,6 +2,7 @@ import { Building, IBuilder } from "./Builder";
 import City from "../Entity/City";
 import { IBuildingJson } from "../Util/GlobalInterfaces";
 import UnitsJSON from "../json/units.json";
+import Tile, { TileType } from "../Tile";
 
 function FindUnitInJSON(name: string) {
   return UnitsJSON.find((e) => e.name === name);
@@ -212,6 +213,12 @@ class CannonFactory extends BuildingBuilder {
     return new Building(() => ({}), this.data);
   }
 }
+class Shipyard extends BuildingBuilder {
+  Build() {
+    this.city.AddAvailable(FindUnitInJSON("Statek"));
+    return new Building(() => ({}), this.data);
+  }
+}
 //#endregion
 
 export function GetBuildingBuilder(data: IBuildingJson, city: City): IBuilder {
@@ -288,9 +295,9 @@ export function GetBuildingBuilder(data: IBuildingJson, city: City): IBuilder {
       return Resolver(Chemlab);
     case "Fabryka armat":
       return Resolver(CannonFactory);
+    case "Stocznia":
+      return Resolver(Shipyard);
     default:
       throw new Error("Building type not recognized ::GetBuildingBuilder");
   }
 }
-console.warn("UPDATE MARKET (add slot for trader)");
-console.warn("UPDATE Walls (add slot for city defense)");

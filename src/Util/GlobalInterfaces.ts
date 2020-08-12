@@ -1,6 +1,6 @@
 import Tile from "../Tile";
 import City, { TAssignedCitizen } from "../Entity/City";
-import { Production } from "../Builders/Builder";
+import CivsJSON from "../json/civinfo.json"
 
 export interface IData {
   prod: number;
@@ -49,24 +49,33 @@ export interface IUnitJson extends IProduct {
 export interface IBuildingJson extends IProduct { }
 
 export interface SerializedTile {
-  type: number,
-  pos: { x: number, y: number },
-  mapPos: { x: number, y: number },
-  displayModifier: boolean,
-  modifier: IModifier
+  type: number;
+  pos: { x: number, y: number };
+  mapPos: { x: number, y: number };
+  displayModifier: boolean;
+  modifier: IModifier;
 }
 
 export interface SerializedCity {
-  mapPos: {x: number, y: number},
-  tiles: {x: number, y: number}[],
-  stats: {pop: number, food: number},
-  defense: number,
-  prod: string,
-  built: string[],
-  available: string[],
-  assignedCitizens: TAssignedCitizen,
-  resourceBuildings: IResources,
-  growthFactor: number,
-  maxCitizens: number,
-  timeLeftToGrow: number
+  mapPos: { x: number, y: number };
+  tiles: { x: number, y: number }[];
+  stats: { pop: number, food: number };
+  defense: number;
+  prod: string;
+  built: string[];
+  available: string[];
+  assignedCitizens: TAssignedCitizen;
+  resourceBuildings: IResources;
+  growthFactor: number;
+  maxCitizens: number;
+  timeLeftToGrow: number;
+
+}
+
+export interface IPickedCivilization {
+  id?: number;
+  leader: string;
+  desc: string;
+  color: string;
+  civname: keyof typeof CivsJSON;
 }

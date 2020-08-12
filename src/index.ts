@@ -2,6 +2,10 @@ import Map from "./Map";
 import { UI } from "./UI/UI";
 import { Civilization } from "./Civiliziations/Civilization";
 import NetworkManager from "./NetworkManager";
+import { GetUnitBuilder } from "./Builders/Units";
+import Units from "./json/units.json"
+import { TileType } from "./Tile";
+import { GetCivilization } from "./Civiliziations/CivDecorator";
 
 export interface IAsset {
   Osadnik: HTMLImageElement;
@@ -16,8 +20,10 @@ export interface IAsset {
   Konny: HTMLImageElement;
   Rydwan: HTMLImageElement;
   Rycerz: HTMLImageElement;
+  Statek: HTMLImageElement
 
   Miasto: HTMLImageElement;
+  MiastoCiocia: HTMLImageElement
 }
 
 export class Game {
@@ -30,6 +36,7 @@ export class Game {
   network: NetworkManager
 
   mainCiv: Civilization;
+  ciociaCiv: Civilization;
   civilizations: Civilization[] = [];
 
   constructor(public size: { x: number; y: number }) {
@@ -45,7 +52,22 @@ export class Game {
     (window.onresize as () => void)();
   }
 
+  async StartSinglePlayer() {
+    this.mainCiv = GetCivilization(0, "Alexandria", this)
+
+    const tile = this.map.RandomItem(this.map.tilesArray.filter(t => t.type !== TileType.Woda))
+    this.mainCiv.AddEntity(GetUnitBuilder("Osadnik", this.mainCiv, tile).Build())
+    this.MainCivAction()
+    this.ui.loginScreen.Close()
+
+    this.Start()
+  }
   async Start() {
+    const pos = this.ciociaCiv.cities[0].tile.pos
+    this.MainCivAction()
+    this.map.Focus(pos)
+    this.ciociaCiv.cities[0].tile.shouldDrawCity = true
+    this.ciociaCiv.cities[0].tile.isInSight = true
     this.Update();
   }
   private Update() {
@@ -59,6 +81,7 @@ export class Game {
     this.map.Update();
 
     this.mainCiv.Update();
+    this.ciociaCiv.Update()
     this.civilizations.forEach((c) => c.Update());
 
     this.c.restore();
@@ -98,6 +121,7 @@ const game = new Game({ x: 100, y: 100 });
 game
   .LoadAssets({
     Miasto: "city",
+    MiastoCiocia: "cityciocia",
     Osadnik: "settler",
     Robotnik: "units/worker",
     Lucznik: "units/archer",
@@ -110,10 +134,6 @@ game
     Konny: "units/cavalry",
     Rycerz: "units/knight",
     Rydwan: "units/chariot",
+    Statek: "units/ship"
+  }).then(() => {
   })
-/*
-console.clear();
-console.warn("ADD IMAGE FOR TARAN!!");
-
-
- */

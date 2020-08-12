@@ -1,11 +1,12 @@
-import { IUnitJson } from "../Util/GlobalInterfaces";
+import { IUnitJson, IProduct } from "../Util/GlobalInterfaces";
 import City from "../Entity/City";
-import Tile from "../Tile";
+import Tile, { TileType } from "../Tile";
 import Unit, { IUnitAction } from "../Entity/Unit";
 import { Civilization } from "../Civiliziations/Civilization";
 import { IBuilder } from "./Builder";
 import TileModifier from "../json/modifiers.json";
 import { IAsset } from "..";
+import UnitsJSON from "../json/units.json"
 
 function GetMeleeAttack(unit: Unit) {
   const meleeAttack = () => {
@@ -57,13 +58,15 @@ function GetBasicUnitActions(unit: Unit): IUnitAction[] {
   ];
 }
 export abstract class UnitBuilder implements IBuilder {
+  public data: IProduct
   constructor(
-    public data: IUnitJson,
+    unitName: keyof IAsset,
     public civ: Civilization,
     public dest: Tile
-  ) { }
+  ) { this.data = UnitsJSON.find(t => t.name === unitName) }
+
   private GetUnit(img: keyof IAsset) {
-    return new Unit(this.dest, this.assets[img], this.civ, this.data);
+    return new Unit(this.dest, this.assets[img], this.civ, this.data as IUnitJson);
   }
 
   protected abstract GetUnitActions(unit: Unit): IUnitAction[];
@@ -317,12 +320,49 @@ class ChariotBuilder extends UnitBuilder {
     return [this.CreateUnitAction("Atak", GetMeleeAttack(unit))];
   }
 }
+class ShipBuilder extends UnitBuilder {
+  GetUnitName(): keyof IAsset {
+    return "Statek";
+  }
+  GetUnitActions(unit: Unit): IUnitAction[] {
+    const unitCargo: Unit[] = []
+    const LoadUnit = () => {
+      const tiles = unit.tile.GetAdj().filter(t => t.entity && t.entity.civ === unit.civ && t.entity !== unit)
+      if (tiles.length === 0) return
 
-export function GetUnitBuilder(data: IUnitJson, civ: Civilization, tile: Tile) {
-  const Resolver = <T extends UnitBuilder>(
-    ctor: new (...args: any[]) => T
-  ): T => new ctor(data, civ, tile);
-  switch (data.name) {
+      unit.SelectActionsTiles(tiles, "purple")
+      unit.tileAction = tile => {
+        unitCargo.push(tile.entity)
+        unit.civ.RemoveEntity(tile.entity)
+      }
+    }
+    const UnloadUnit = () => {
+      const tiles = unit.tile.GetAdj().filter(t => !t.entity && !t.city && t.type !== TileType.Woda)
+      if (tiles.length === 0 || unitCargo.length === 0) return
+      unit.SelectActionsTiles(tiles, "purple")
+      unit.tileAction = tile => {
+        const unloaded = unitCargo.pop()
+        unit.civ.AddEntity(unloaded)
+        unloaded.tile = tile
+        tile.entity = unloaded
+      }
+    }
+    return [this.CreateUnitAction("Załaduj jednostke", LoadUnit), this.CreateUnitAction("Wyładuj jednostke", UnloadUnit)];
+  }
+  OnBeforeBuild(unit: Unit) {
+    unit.isLandUnit = false
+    unit.tile.entity = undefined
+    const nt = unit.tile.GetAdj().find(t => t.type === TileType.Woda)
+    unit.tile = nt
+    nt.entity = unit
+  }
+}
+
+export function GetUnitBuilder(unitName: keyof IAsset, civ: Civilization, tile: Tile) {
+  const Resolver =
+    <T extends UnitBuilder>(ctor: new (...args: any[]) => T): T => new ctor(unitName, civ, tile);
+
+  switch (unitName) {
     case "Osadnik":
       return Resolver(SettlerBuilder);
     case "Robotnik":
@@ -347,8 +387,10 @@ export function GetUnitBuilder(data: IUnitJson, civ: Civilization, tile: Tile) {
       return Resolver(CavalryBuilder);
     case "Taran":
       return Resolver(TaranBuilder);
+    case "Statek":
+      return Resolver(ShipBuilder);
 
     default:
-      throw new Error("Unit type not recognized ::GetUnitBuilder");
+      throw new Error("Unit type not recognized ::GetUnitBuilder" + unitName);
   }
 }

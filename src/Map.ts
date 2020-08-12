@@ -258,12 +258,10 @@ export default class Map {
   LoadMap(map: SerializedTile[]) {
     for (const tile of map) {
       const { x: mx, y: my } = tile.mapPos
-      this.tiles[mx][my].type = tile.type
-      this.tiles[mx][my].modifier = tile.modifier
-      this.tiles[mx][my].displayModifier = tile.displayModifier
+      this.tiles[mx][my].LoadData(tile)
     }
   }
-  LoadTile(data: SerializedTile) {
+  UpdateTileData(data: SerializedTile) {
     this.LoadMap([data])
   }
 }

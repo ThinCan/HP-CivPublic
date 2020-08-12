@@ -67,9 +67,13 @@ io.on("connection", (socket) => {
     socket.to(code).emit("removecity", civid, unitpos)
   })
   socket.on("setready", (code, id, val) => {
-    const civ = rooms.get(code).civs.find(t => t.id === id)
-    civ.ready = val
-    if (rooms.get(code).civs.every(t => t.ready)) io.to(code).emit("turn")
+    try {
+      const civ = rooms.get(code).civs.find(t => t.id === id)
+      civ.ready = val
+      if (rooms.get(code).civs.every(t => t.ready)) io.to(code).emit("turn")
+    } catch (e) {
+      console.error(`Nie mozna ustawic wartosci ready cywilizacji o id: ${id} i kodzie: ${code}`)
+    }
   })
   socket.on("moveunit", (code, civid, oldPos, newPos) => {
     socket.to(code).emit("moveunit", civid, oldPos, newPos)
@@ -83,6 +87,9 @@ io.on("connection", (socket) => {
   })
   socket.on("updatecity", (code, data) => {
     socket.to(code).emit("updatecity", data)
+  })
+  socket.on("setciociacity", (code, pos) => {
+    socket.to(code).emit("setciociacity", pos)
   })
 
 

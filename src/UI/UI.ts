@@ -49,9 +49,6 @@ export class UI {
   public loginScreen = new LoginScreen(this);
 
   constructor(public game: Game) {
-    getElement(".actions-turn").onclick = () => {
-      game.NextTurn();
-    };
     this.uiitems.gameContainer.style.display = "none"
   }
 

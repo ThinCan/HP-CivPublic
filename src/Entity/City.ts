@@ -2,24 +2,17 @@ import { IBuilder, Production, Building } from "../Builders/Builder";
 import { Civilization } from "../Civiliziations/Civilization";
 import BuildingsJSON from "../json/citybuilding.json";
 import UnitsJSON from "../json/units.json";
-import Tile from "../Tile";
+import Tile, { TileType } from "../Tile";
 import { IData, IResources, IProduct, SerializedCity } from "../Util/GlobalInterfaces";
 import { Entity } from "./Entity";
 import { GetUnitBuilder } from "../Builders/Units";
 import { GetBuildingBuilder } from "../Builders/Buildings";
+import { IAsset } from "..";
 
 export type TAssignedCitizen = IResources & { prod: number; food: number };
 
-function UpdateDec(city: City, name: string, dec: PropertyDescriptor) {
-  const ori = dec.value
-
-  dec.value = function (...args: any[]) {
-    (this as City).civ.game.network.UpdateCity(this.Serialize());
-    (ori as Function).apply(this, args)
-  }
-}
-
 export default class City extends Entity {
+
   static TimeToGrow = 5;
   private _stats = { pop: 1, food: 6 };
 
@@ -59,10 +52,11 @@ export default class City extends Entity {
 
   constructor(tile: Tile, img: HTMLImageElement, civ: Civilization) {
     super(tile, img, civ);
-    tile.modifier = undefined;
     const adj = tile.GetAdj().filter((t) => !t.owner);
     tile.owner = this;
     adj.forEach((t) => (t.owner = this));
+
+    if (adj.find(t => t.type === TileType.Woda)) this.AddAvailable(BuildingsJSON.find(t => t.name === "Stocznia"))
 
     this.tiles = adj;
     this.timeLeftToGrow = 0;
@@ -71,6 +65,8 @@ export default class City extends Entity {
   }
 
   Update() {
+    if (!this.tile.shouldDrawCity) return
+
     super.Update();
 
     this.map.c.fillStyle = "black";
@@ -102,6 +98,8 @@ export default class City extends Entity {
   }
 
   OnTurn() {
+    this.tiles.forEach(t => t.SetVisibility(true))
+
     //#region Population Growth
     if (this.growthFactor !== 0) this.timeLeftToGrow--;
 
@@ -110,18 +108,19 @@ export default class City extends Entity {
 
 
       if (this.maxCitizens < this._stats.pop && this.growthFactor > 0) {
-        if (this.civ.id !== this.civ.game.mainCiv.id) return;
-
-        this.maxCitizens = this._stats.pop;
-        const rtiles = this.tiles.map((t) =>
-          t.GetAdj().filter((t) => !t.owner)
-        );
-        //@ts-ignore
-        const picked = this.map.RandomItem<Tile>(rtiles.flat());
-        picked.owner = this;
-        this.tiles.push(picked);
+        if (this.civ.id === this.civ.game.mainCiv.id) {
+          this.maxCitizens = this._stats.pop;
+          const rtiles = this.tiles.map((t) =>
+            t.GetAdj().filter((t) => !t.owner)
+          );
+          //@ts-ignore
+          const picked = this.map.RandomItem<Tile>(rtiles.flat());
+          picked.owner = this;
+          this.tiles.push(picked);
+        }
       }
       this.SetTurnsAndGrowthFactor();
+      this.SendUpdate()
     }
 
     //#endregion
@@ -163,6 +162,8 @@ export default class City extends Entity {
   }
   AddAvailable(e: IProduct) {
     if (!e) throw new Error("Available product is undefined");
+    else if (this.available.includes(e)) return;
+
     this.available.push(e);
     this.SendUpdate()
   }
@@ -196,7 +197,7 @@ export default class City extends Entity {
 
     if (data.prod) {
       const isProdUnit = UnitsJSON.findIndex(t => t.name === data.prod) > -1
-      if (isProdUnit) this.production = new Production(GetUnitBuilder(UnitsJSON.find(t => t.name === data.prod), this.civ, this.tile), this)
+      if (isProdUnit) this.production = new Production(GetUnitBuilder(data.prod as keyof IAsset, this.civ, this.tile), this)
       else this.production = new Production(GetBuildingBuilder(BuildingsJSON.find(t => t.name === data.prod), this), this)
     }
 
@@ -276,6 +277,11 @@ export default class City extends Entity {
       this.growthFactor = 1;
     }
     this.SendUpdate()
+  }
+  TransferOwnership(civ: Civilization) {
+    this.civ.RemoveEntity(this)
+    this.civ = civ
+    this.civ.AddEntity(this)
   }
   get rawStats() {
     return this._stats;

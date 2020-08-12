@@ -16,7 +16,7 @@ export class Building {
   constructor(
     private callback: IBuildingCallback,
     public data: IBuildingJson
-  ) {}
+  ) { }
   GetData(): IBuildingData {
     return this.callback();
   }
@@ -36,8 +36,10 @@ export class Production {
     if (this.prodLeft <= 0) {
       const building = this.builder.Build();
       if (building instanceof Unit) this.city.civ.AddEntity(building);
-      else this.city.built.push(building);
-      this.city.RemoveAvailable(building.data.name)
+      else {
+        this.city.built.push(building)
+        this.city.RemoveAvailable(building.data.name)
+      }
       return true;
     }
     this.timeLeftToBuild = Math.ceil(this.prodLeft / this.city.stats.prod);

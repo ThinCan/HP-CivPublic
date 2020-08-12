@@ -1,9 +1,8 @@
 import City from "../Entity/City";
 import { IProduct } from "../Util/GlobalInterfaces";
-import  BuildingsJSON from "../json/citybuilding.json";
-import  UnitsJSON from "../json/units.json";
+import BuildingsJSON from "../json/citybuilding.json";
 
-export class ZadupiusCity extends City {
+export class AlexandriaCity extends City {
   AddAvailable(e: IProduct) {
     if (e.name === "Dzielnica handlowa")
       super.AddAvailable(
@@ -11,8 +10,9 @@ export class ZadupiusCity extends City {
           (e) => e.name === "Kondominium pod żydowskim zarządem powierniczym"
         )
       );
-    else if (e.name === "Arkebuzer")
-      super.AddAvailable(UnitsJSON.find((e) => e.name === "Muszkieter"));
     else super.AddAvailable(e);
   }
+}
+export class CiociaCity extends City {
+  
 }

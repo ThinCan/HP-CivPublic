@@ -10,12 +10,15 @@ export abstract class Entity implements IEntity {
   pos: { x: number; y: number; size: number };
 
   public selected = false;
+  private _tile: Tile
 
   constructor(
-    private _tile: Tile,
+    tile: Tile,
     public img: HTMLImageElement,
     public civ: Civilization
   ) {
+    
+    this._tile = tile
     this.pos = {
       x: Math.floor(this.tile.pos.x - Tile.size),
       y: Math.floor(this.tile.pos.y - Tile.size * 2),

@@ -4,35 +4,30 @@ import { Game } from "..";
 import { Entity } from "../Entity/Entity";
 import { IResources, IData } from "../Util/GlobalInterfaces";
 
-function addEntityDec() {
-  return function (prot: any, name: string, desc: PropertyDescriptor) {
-    const ori = desc.value
-    desc.value = function (e: Entity, send = true) {
-      if (send) {
-        if (e instanceof Unit) this.game.network.CreateUnit(this.id, e.tile.mapPos, e.data.name)
-        else if (e instanceof City) this.game.network.CreateCity(this.id, e.tile.mapPos)
-      }
-
-      return (<Function>ori).call(this, e, send)
+function addEntityDec(prot: any, name: string, desc: PropertyDescriptor) {
+  const ori = desc.value
+  desc.value = function (e: Entity, send = true) {
+    if (send && e.civ.game.mainCiv && e.civ.id === e.civ.game.mainCiv.id) {
+      if (e instanceof Unit) this.game.network.CreateUnit(this.id, e.tile.mapPos, e.data.name)
+      else if (e instanceof City) this.game.network.CreateCity(this.id, e.tile.mapPos)
     }
+    return (<Function>ori).call(this, e, send)
   }
 }
-function removeEntityDec() {
-  return function (prot: any, name: string, desc: PropertyDescriptor) {
-    const ori = desc.value
-    desc.value = function (e: Entity, send = true) {
+function removeEntityDec(prot: any, name: string, desc: PropertyDescriptor) {
+  const ori = desc.value
+  desc.value = function (e: Entity, send = true) {
 
-      if (send) {
-        if (e instanceof Unit) this.game.network.RemoveUnit(this.id, e.tile.mapPos)
-        else if (e instanceof City) this.game.network.RemoveCity(this.id, e.tile.mapPos)
-      }
-
-      return (<Function>ori).call(this, e, send)
+    if (send) {
+      if (e instanceof Unit) this.game.network.RemoveUnit(this.id, e.tile.mapPos)
+      else if (e instanceof City) this.game.network.RemoveCity(this.id, e.tile.mapPos)
     }
+
+    return (<Function>ori).call(this, e, send)
   }
 }
 
-export class Civilization {
+export abstract class Civilization {
   private _ready = false;
   queue: Entity[] = [];
   units: Unit[] = [];
@@ -53,22 +48,22 @@ export class Civilization {
     public id: number
   ) { }
 
-  @addEntityDec()
+  @addEntityDec
   AddEntity(e: Entity, broadcast = true) {
-    if (e instanceof Unit) this.units.push(e);
-    else if (e instanceof City) this.cities.push(e);
-    this.queue.push(e)
 
+    if (e instanceof Unit) { this.units.push(e); }
+    else if (e instanceof City) { this.cities.push(e); }
+    this.queue.push(e)
   }
-  @removeEntityDec()
+
+  @removeEntityDec
   RemoveEntity(e: Entity, broadcast = true) {
     e?.Deselect();
-    delete e.tile.entity;
+    e.tile.entity = undefined
     if (e instanceof Unit) {
       this.units = this.units.filter((t) => t !== e);
     } else {
       this.cities = this.cities.filter((t) => t !== e);
-      console.log("usuwam maisto");
     }
     this.queue = this.queue.filter((t) => t !== e);
   }

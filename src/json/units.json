@@ -161,5 +161,18 @@
     "health": 30,
     "defense": 15,
     "attack": 10
+  },
+  {
+    "name": "Statek",
+    "desc": "Jednostka służąca do transportu jednostek",
+    "production": 100,
+    "requires": [],
+    "cost": {
+      "wood": 25,
+      "money": 50
+    },
+    "health": 10,
+    "defense": 10,
+    "attack": 0
   }
 ]

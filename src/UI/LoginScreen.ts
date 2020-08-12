@@ -1,6 +1,7 @@
 import { IScreen, getElement, UI } from "./UI";
-import CivInfo from "../json/civinfo.json"
 import { v4 } from "uuid"
+import CivsJSON from "../json/civinfo.json"
+import { IPickedCivilization } from "../Util/GlobalInterfaces";
 
 export default class LoginScreen implements IScreen {
     Close() {
@@ -10,7 +11,7 @@ export default class LoginScreen implements IScreen {
     Show() { }
 
     private ready = false
-    public pickedCiv: { leader: string, desc: string, color: string, civname: string }
+    public pickedCiv: IPickedCivilization
     private uiitems = {
         civ: getElement<HTMLSelectElement>("#civ-select"),
         portrait: getElement<HTMLImageElement>(".civ-portrait"),
@@ -38,18 +39,18 @@ export default class LoginScreen implements IScreen {
         e.preventDefault();
     }
     private onCivChange(e: Event) {
-        type CivKey = keyof typeof CivInfo;
+        type CivKey = keyof typeof CivsJSON;
         //@ts-ignore
         const val = (<HTMLSelectElement>e.target).value
-        if (!CivInfo[val as CivKey]) {
+        if (!CivsJSON[val as CivKey]) {
             this.ready = false
             this.uiitems.portrait.style.display = "none"
             this.uiitems.civInfo.textContent = ""
             this.pickedCiv = undefined
             return
         }
-        this.pickedCiv = { ...CivInfo[val as CivKey], civname: val }
-        const info = CivInfo[val as CivKey]
+        this.pickedCiv = { ...CivsJSON[val as CivKey], civname: val as CivKey }
+        const info = CivsJSON[val as CivKey]
         this.uiitems.portrait.style.display = "block"
         this.uiitems.portrait.src = `./img/portraits/${val}.png`
         this.uiitems.civInfo.innerHTML = `Przywódca: ${info.leader}<br>${info.desc}`

@@ -2,18 +2,8 @@ import Map from "./Map";
 import { Astar } from "./Util/Pathfind";
 import JSONTileData from "./json/tiledata.json";
 import Unit from "./Entity/Unit";
-import { IModifier, IAdjTiles } from "./Util/GlobalInterfaces";
+import { IModifier, IAdjTiles, SerializedTile } from "./Util/GlobalInterfaces";
 import City from "./Entity/City";
-import NetworkManager from "./NetworkManager";
-
-function updateTile(tile: Tile, name: string, desc: PropertyDescriptor) {
-  const ori = desc.value
-
-  desc.value = function (...args: any[]) {
-    (this.map.game.network as NetworkManager).UpdateTile(this.Serialize());
-    (<Function>ori).apply(this, args)
-  }
-}
 
 export interface TileData {
   weight: number;
@@ -51,9 +41,35 @@ export default class Tile {
   selected?: ISelected;
 
   //unit standing on this tile
-  entity: Unit;
+  private _entity: Unit;
   owner: City;
-  city: City;
+  private _city: City;
+
+  get city() { return this._city }
+  set city(value: City) {
+    this._city = value
+    if (value.civ === value.civ.game.mainCiv)
+      this.SetVisibility(true)
+  }
+
+  // If is in sight, display enemy unit
+  private _isInSight = false
+  get isInSight() { return this._isInSight }
+  set isInSight(value: boolean) {
+    this._isInSight = value;
+    if (value) {
+      this.hasBeenInSight = value;
+      if (this.city || this.owner) { this.shouldDrawCity = true; }
+    }
+  }
+
+  // If has been in sight, but is not right now, only draw city
+  private _hasBeenInSight = false
+  get hasBeenInSight() { return this._hasBeenInSight }
+  set hasBeenInSight(value: boolean) { this._hasBeenInSight = value }
+
+  public shouldDrawCity = false
+
 
   static size = 75;
   static sizet = Math.floor(Math.sqrt(Tile.size ** 2 - (Tile.size / 2) ** 2));
@@ -72,6 +88,7 @@ export default class Tile {
   }
 
   Draw() {
+
     //#region Sprawdz, czy plytka jest widoczna, jesli nie - nie rysuj
     const startX = -this.map.translate.x;
     const startY = -this.map.translate.y;
@@ -108,11 +125,13 @@ export default class Tile {
     }
     if (!this.lines) this.lines = lines;
 
-    this.map.c.fillStyle = this.color;
+    if (this.hasBeenInSight) { this.map.c.fillStyle = this.color; }
+    else this.map.c.fillStyle = "black"
     this.map.c.fill();
 
-    if (this.displayModifier && this._modifier !== undefined) {
-      if (Tile.modifierImgs.has(this._modifier.img))
+
+    if (this.hasBeenInSight && this.displayModifier && this._modifier !== undefined) {
+      if (Tile.modifierImgs.has(this._modifier.img)) {
         this.map.c.drawImage(
           Tile.modifierImgs.get(this.modifier.img),
           this.pos.x - Tile.sizet,
@@ -120,9 +139,9 @@ export default class Tile {
           Tile.sizet * 2,
           Tile.sizet * 2
         );
+      }
     }
-
-    if (this.owner || this.selected) this.DrawBorder();
+    if ((this.shouldDrawCity) || this.selected || this.owner && (this.owner.civ.id === this.owner.civ.game.mainCiv.id)) this.DrawBorder();
   }
   DrawBorder() {
     const adj = this.GetNamedAdj();
@@ -216,14 +235,23 @@ export default class Tile {
   Deselect() {
     delete this.selected;
   }
-  Serialize() {
+  Serialize(): SerializedTile {
     return {
       type: this.type,
       pos: this.pos,
       mapPos: this.mapPos,
       displayModifier: this.displayModifier,
-      modifier: this._modifier
+      modifier: this._modifier,
     }
+  }
+  LoadData(data: SerializedTile) {
+    this.displayModifier = data.displayModifier
+    this.modifier = data.modifier
+    this.type = data.type
+  }
+  SetVisibility(value: boolean) {
+    this.isInSight = value
+    this.GetAdj(3).forEach(t => t.isInSight = value)
   }
   set type(t: TileType) {
     this._type = t;
@@ -265,6 +293,13 @@ export default class Tile {
   }
   get color() {
     return this.data.color;
+  }
+  get entity() { return this._entity }
+  set entity(value: Unit) {
+    if (!value) { delete this._entity; return }
+    this._entity = value
+    if (value.civ === value.civ.game.mainCiv)
+      this.SetVisibility(true)
   }
   set modifier(value: IModifier | undefined) {
     if (value === undefined) {

@@ -31,6 +31,10 @@ function damageDecorator(unit: Unit, name: string, desc: PropertyDescriptor) {
 
 export default class Unit extends Entity {
   static walkingRange = 2;
+  static forbiddenTilesForLandUnits: TileType[] = [TileType.Woda]
+
+  // If type is not an array, the specified TileType is the only one allowed for particular unit
+  static forbiddenTilesForNavalUnits: TileType[] | TileType = TileType.Woda
 
   private _actions: IUnitAction[] = [];
   additionalActionsCallback: (tile: Tile) => IUnitAction[];
@@ -47,8 +51,9 @@ export default class Unit extends Entity {
   private _actionTiles: Tile[] = [];
   tileAction: (tile: Tile) => void;
 
-  // used by, for example worker to construct mines in 3 turns
+  // used by, for example worker, to construct mines in 3 turns
   action: { turns: number; execute: () => void };
+  isLandUnit = true
 
   constructor(
     tile: Tile,
@@ -64,6 +69,8 @@ export default class Unit extends Entity {
     this.attack = data.attack;
   }
   Update() {
+    if (!this.tile.isInSight) return
+
     super.Update();
 
     const c = this.map.c;
@@ -85,13 +92,10 @@ export default class Unit extends Entity {
   @moveDecorator
   Move(tile: Tile) {
     if (tile.city && tile.city.civ !== this.civ) {
-      const city = tile.city;
-      city.civ.RemoveEntity(city);
-      city.civ = this.civ;
-      city.civ.AddEntity(city);
+      tile.city.TransferOwnership(this.civ)
     }
 
-    delete this.tile.entity;
+    this.tile.entity = undefined;
     this.tile = tile;
     tile.entity = this;
     this.walkingRange -= this.tilesInRange.get(tile);
@@ -151,7 +155,8 @@ export default class Unit extends Entity {
     const resmap: globalThis.Map<Tile, number> = new globalThis.Map();
 
     const Sum = (total: number = 0, tile: Tile = this.tile) => {
-      if (tile.type === TileType.Woda) return;
+      if (this.isLandUnit && Unit.forbiddenTilesForLandUnits.includes(tile.type)) return;
+      else if (!this.isLandUnit && Unit.forbiddenTilesForNavalUnits !== tile.type) return;
 
       if (tile.entity && tile.entity !== this) return;
       if (tile.city && tile.city.civ !== this.civ && tile.city.defense > 0)
