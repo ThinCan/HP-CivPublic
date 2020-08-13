@@ -1,48 +1,34 @@
 import City from "../Entity/City";
-import {
-  IBuildingCallback,
-  IBuildingJson,
-  IProduct,
-  IBuildingData,
-} from "../Util/GlobalInterfaces";
-import Unit from "../Entity/Unit";
+import { IProduct } from "../Util/GlobalInterfaces";
 
 export interface IBuilder {
   data: IProduct;
-  Build(): Building | Unit;
-}
-
-export class Building {
-  constructor(
-    private callback: IBuildingCallback,
-    public data: IBuildingJson
-  ) { }
-  GetData(): IBuildingData {
-    return this.callback();
-  }
+  city: City
+  Build(): void
 }
 
 export class Production {
   public timeLeftToBuild: number;
   private prodLeft: number;
+  private city: City
 
-  constructor(public builder: IBuilder, public city: City) {
+  constructor(public builder: IBuilder) {
+    this.city = builder.city
     this.prodLeft = builder.data.production;
-    this.timeLeftToBuild = Math.ceil(this.prodLeft / city.stats.prod);
+    this.timeLeftToBuild = Math.ceil(this.prodLeft / this.city.stats.Get("prod"));
   }
 
-  Next(): boolean {
-    this.prodLeft -= this.city.stats.prod;
+  Next() {
+    this.prodLeft -= this.city.stats.Get("prod")
+
     if (this.prodLeft <= 0) {
-      const building = this.builder.Build();
-      if (building instanceof Unit) this.city.civ.AddEntity(building);
-      else {
-        this.city.built.push(building)
-        this.city.RemoveAvailable(building.data.name)
-      }
-      return true;
+      this.builder.Build();
+
+      this.city.built.add(this.builder.data)
+      this.city.RemoveAvailable(this.builder.data)
+      delete this.city.production
     }
-    this.timeLeftToBuild = Math.ceil(this.prodLeft / this.city.stats.prod);
-    return false;
+
+    this.timeLeftToBuild = Math.ceil(this.prodLeft / this.city.stats.Get("prod"));
   }
 }

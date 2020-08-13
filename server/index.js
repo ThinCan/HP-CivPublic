@@ -20,6 +20,7 @@ function Room(code, map, playerCount) {
   this.playerCount = playerCount
   this.id = 0
   this.started = false
+  this.ciociaCivPos;
 }
 
 Room.prototype.Join = function (socket, civname) {
@@ -30,10 +31,10 @@ Room.prototype.Join = function (socket, civname) {
 }
 Room.prototype.Start = function () {
   if (this.civs.length !== this.playerCount) return;
+  if(!this.ciociaCivPos) return
   this.started = true
-
   for (const civ of this.civs) {
-    io.to(this.sockets.get(civ.id).id).emit("gameready", civ.id, this.map, this.civs.filter(t => t.id !== civ.id), this.code)
+    io.to(this.sockets.get(civ.id).id).emit("gameready", civ.id, this.map, this.civs.filter(t => t.id !== civ.id), this.code, this.ciociaCivPos)
   }
 }
 
@@ -89,7 +90,11 @@ io.on("connection", (socket) => {
     socket.to(code).emit("updatecity", data)
   })
   socket.on("setciociacity", (code, pos) => {
-    socket.to(code).emit("setciociacity", pos)
+    rooms.get(code).ciociaCivPos = pos
+    rooms.get(code).Start()
+  })
+  socket.on("sendlog", (code, text) => {
+    socket.to(code).emit("sendlog",text)
   })
 
 

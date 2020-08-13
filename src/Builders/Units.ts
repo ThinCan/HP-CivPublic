@@ -7,6 +7,11 @@ import { IBuilder } from "./Builder";
 import TileModifier from "../json/modifiers.json";
 import { IAsset } from "..";
 import UnitsJSON from "../json/units.json"
+import BuildingsJSON from "../json/citybuilding.json"
+
+function FindBuildingByName(name: string) {
+  return BuildingsJSON.find(t => t.name === name)
+}
 
 function GetMeleeAttack(unit: Unit) {
   const meleeAttack = () => {
@@ -58,15 +63,15 @@ function GetBasicUnitActions(unit: Unit): IUnitAction[] {
   ];
 }
 export abstract class UnitBuilder implements IBuilder {
-  public data: IProduct
+  public city: City
   constructor(
-    unitName: keyof IAsset,
-    public civ: Civilization,
+    public data: IUnitJson,
+    public owner: City | Civilization,
     public dest: Tile
-  ) { this.data = UnitsJSON.find(t => t.name === unitName) }
+  ) { if (owner instanceof City) this.city = owner }
 
   private GetUnit(img: keyof IAsset) {
-    return new Unit(this.dest, this.assets[img], this.civ, this.data as IUnitJson);
+    return new Unit(this.dest, this.assets[img], this.civ, this.data);
   }
 
   protected abstract GetUnitActions(unit: Unit): IUnitAction[];
@@ -79,13 +84,13 @@ export abstract class UnitBuilder implements IBuilder {
   ): IUnitAction {
     return { desc, execute: callback, img };
   }
-  Build(): Unit {
+  Build(broadcast = true) {
     const unit = this.GetUnit(this.GetUnitName());
     unit.actions = [...GetBasicUnitActions(unit), ...this.GetUnitActions(unit)];
     this.OnBeforeBuild(unit);
-
-    return unit;
+    this.civ.AddEntity(unit, broadcast)
   }
+  get civ() { return this.owner instanceof City ? this.owner.civ : this.owner }
   private get assets() {
     return this.civ.game.assets;
   }
@@ -119,7 +124,7 @@ class WorkerBuilder extends UnitBuilder {
 
       switch (tile.modifier) {
         case TileModifier.forest:
-          if (!tile.owner?.built.find((e) => e.data.name === "Drwal")) break;
+          if (!tile.owner?.built.has(FindBuildingByName("Drwal"))) break;
 
           actions.push({
             desc: "Buduj Tartak",
@@ -136,7 +141,7 @@ class WorkerBuilder extends UnitBuilder {
           });
           break;
         case TileModifier.iron:
-          if (!tile.owner?.built.find((e) => e.data.name === "Huta")) break;
+          if (!tile.owner?.built.has(FindBuildingByName("Huta"))) break;
 
           actions.push({
             desc: "Buduj kopalnie żelaza",
@@ -153,7 +158,7 @@ class WorkerBuilder extends UnitBuilder {
           });
           break;
         case TileModifier.stone:
-          if (!tile.owner?.built.find((e) => e.data.name === "Kamieniołom"))
+          if (!tile.owner?.built.has(FindBuildingByName("Kamieniołom")))
             break;
 
           actions.push({
@@ -214,7 +219,7 @@ class DocentBuilder extends UnitBuilder {
           desc: "Zacznij wydobywać minerał",
           img: "./img/modifiers/mineral.png",
           execute() {
-            unit.civ.resources.mineral += 0.1;
+            unit.civ.resources.Add("mineral", 0.1)
             unit.walkingRange = 0;
             unit.civ.NextAction();
           },
@@ -358,11 +363,11 @@ class ShipBuilder extends UnitBuilder {
   }
 }
 
-export function GetUnitBuilder(unitName: keyof IAsset, civ: Civilization, tile: Tile) {
+export function GetUnitBuilder(data: IUnitJson, tile: Tile, owner: Civilization | City) {
   const Resolver =
-    <T extends UnitBuilder>(ctor: new (...args: any[]) => T): T => new ctor(unitName, civ, tile);
+    <T extends UnitBuilder>(ctor: new (...args: any[]) => T): T => new ctor(data, owner, tile);
 
-  switch (unitName) {
+  switch (data.name) {
     case "Osadnik":
       return Resolver(SettlerBuilder);
     case "Robotnik":
@@ -391,6 +396,6 @@ export function GetUnitBuilder(unitName: keyof IAsset, civ: Civilization, tile: 
       return Resolver(ShipBuilder);
 
     default:
-      throw new Error("Unit type not recognized ::GetUnitBuilder" + unitName);
+      throw new Error("Unit type not recognized ::GetUnitBuilder" + data.name);
   }
 }

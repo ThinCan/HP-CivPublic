@@ -16,8 +16,27 @@ export default class NetworkManager {
 
     constructor(private game: Game) {
         this.socket = io(this.url)
+        this.socket.on("gameready", async (id: number, map: SerializedTile[], civs: IPickedCivilization[], code: string, ciociaCivPos: any) => {
+            await game.LoadAssets({
+                Miasto: "city",
+                MiastoCiociaOtwarte: "cityciociaopen",
+                MiastoCiociaZamkniete: "cityciociaclosed",
+                Osadnik: "settler",
+                Robotnik: "units/worker",
+                Lucznik: "units/archer",
+                Kusznik: "units/crossbowman",
+                Wojownik: "units/warrior",
+                Taran: "units/taran",
+                Docent: "units/docent",
+                Katapulta: "units/catapult",
+                Armata: "units/cannon",
+                Konny: "units/cavalry",
+                Rycerz: "units/knight",
+                Rydwan: "units/chariot",
+                Statek: "units/ship"
+            })
 
-        this.socket.on("gameready", (id: number, map: SerializedTile[], civs: IPickedCivilization[], code: string) => {
+
             this.roomcode = code
             const pickedCiv = game.ui.loginScreen.pickedCiv
             game.mainCiv = GetCivilization(id, pickedCiv.civname, game)
@@ -27,9 +46,15 @@ export default class NetworkManager {
 
             game.map.LoadMap(map)
 
+            console.log(ciociaCivPos)
             const tiles = game.map.tilesArray.filter(t => t.type !== TileType.Woda)
             const tile = game.map.RandomItem(tiles)
-            game.mainCiv.AddEntity(GetUnitBuilder("Osadnik", game.mainCiv, tile).Build())
+            GetUnitBuilder(UnitsJSON[0], tile, game.mainCiv).Build()
+
+            const ctile = this.game.map.tiles[ciociaCivPos.x][ciociaCivPos.y]
+            this.game.ciociaCiv = GetCivilization(-1, "Ciocia", this.game)
+            this.game.ciociaCiv.AddEntity(new City(ctile, this.game.assets.MiastoCiociaZamkniete, this.game.ciociaCiv))
+
 
             game.ui.loginScreen.Close()
             game.Start()
@@ -44,27 +69,25 @@ export default class NetworkManager {
         this.socket.on("receivedamage", (id: number, pos: { x: number, y: number }, value: number) => this.ReceiveDamage(id, pos, value, false))
         this.socket.on("updatetile", (data: SerializedTile) => this.UpdateTile(data, false))
         this.socket.on("updatecity", (data: SerializedCity) => this.UpdateCity(data, false))
-        this.socket.on("setciociacity", (pos: { x: number, y: number }) => this.SetCiociaCity(pos))
+        this.socket.on("sendlog", (text: string) => game.ui.appendToActionLog(text))
     }
 
     CreateGame(players: number, code: string, map: SerializedTile[]) {
         if (!this.game.ui.loginScreen.pickedCiv) return
         this.socket.emit("creategame", { players, code, map, civname: this.game.ui.loginScreen.pickedCiv.civname })
-        
+
         const tiles = this.game.map.tilesArray.filter(t => t.type !== TileType.Woda && !t.modifier)
         const tile = this.game.map.RandomItem(tiles)
-        this.SetCiociaCity(tile.mapPos)
-        this.socket.emit("setciociacity", this.roomcode, tile.mapPos)
+        this.socket.emit("setciociacity", code, tile.mapPos)
     }
-    JoinGame(code: string, pickedCiv: string) {
-        this.socket.emit("joingame", code, pickedCiv)
-    }
+    JoinGame(code: string, pickedCiv: string) { this.socket.emit("joingame", code, pickedCiv) }
+
     CreateUnit(id: number, pos: { x: number, y: number }, name: string, send = true) {
         if (send) { this.socket.emit("createunit", this.roomcode, this.game.mainCiv.id, pos, name); }
         else {
             const civ = this.game.civilizations.find(t => t.id === id);
             const tile = this.game.map.tiles[pos.x][pos.y]
-            civ.AddEntity(GetUnitBuilder(name as keyof IAsset, civ, tile).Build(), false)
+            GetUnitBuilder(UnitsJSON.find(t => t.name === name), tile, civ).Build(false)
         }
     }
     CreateCity(id: number, pos: { x: number, y: number }, send = true) {
@@ -125,9 +148,9 @@ export default class NetworkManager {
             this.game.map.tiles[data.mapPos.x][data.mapPos.y].city.UpdateData(data)
         }
     }
-    SetCiociaCity(pos: { x: number, y: number }) {
-        const tile = this.game.map.tiles[pos.x][pos.y]
-        this.game.ciociaCiv = GetCivilization(-1, "Ciocia", this.game)
-        this.game.ciociaCiv.AddEntity(new City(tile, this.game.assets.MiastoCiocia, this.game.ciociaCiv))
+    SendLog(text: string, toSelf = false) {
+        console.log("wysylam")
+        this.socket.emit("sendlog", this.roomcode, text)
+        if (toSelf) this.game.ui.appendToActionLog(text)
     }
 }

@@ -4,7 +4,7 @@ import { IProduct, IResources, IUnitJson } from "../Util/GlobalInterfaces";
 import { GetUnitBuilder } from "../Builders/Units";
 import { GetBuildingBuilder } from "../Builders/Buildings";
 import { IAsset } from "..";
-
+import { Production } from "../Builders/Builder";
 interface ICounter {
   count: HTMLElement;
   inc: HTMLElement;
@@ -20,16 +20,10 @@ interface IUIElements {
     grow: HTMLElement;
     ttb: HTMLElement;
   };
-  citizens: {
-    citizenCount: HTMLElement;
-    prod: ICounter;
-    food: ICounter;
-    money: ICounter;
-    horse: ICounter;
-    wood: ICounter;
-    iron: ICounter;
-    stone: ICounter;
+  citizens: { [P in keyof (IResources & { prod: number, food: number })]: ICounter } & {
+    citizenCount: HTMLElement
   };
+
   availableBuildings: HTMLElement;
   availableUnits: HTMLElement;
   itemDescription: HTMLElement;
@@ -100,16 +94,16 @@ export default class CityScreen implements IScreen {
     const ui = this.uielements;
 
     ui.cityName.textContent = city.name;
-    ui.cityStats.food.textContent = stats.food.toString();
-    ui.cityStats.pop.textContent = stats.pop.toString();
-    ui.cityStats.prod.textContent = stats.prod.toString();
+    ui.cityStats.food.textContent = stats.Get("food").toString();
+    ui.cityStats.pop.textContent = stats.Get("pop").toString();
+    ui.cityStats.prod.textContent = stats.Get("prod").toString();
     ui.cityStats.grow.textContent = city.timeLeftToGrow.toString();
     ui.cityStats.ttb.textContent =
       city.production?.timeLeftToBuild.toString() || "N/A";
 
     this.uielements.availableUnits.innerHTML = "";
     this.uielements.availableBuildings.innerHTML = "";
-    for (const item of available) {
+    for (const item of available.keys()) {
       if (!item) continue;
       const container =
         "health" in item ? ui.availableUnits : ui.availableBuildings;
@@ -128,12 +122,12 @@ export default class CityScreen implements IScreen {
 
   private updateCitizensOccupied(city: City) {
     this.uielements.citizens.citizenCount.textContent = (
-      city.stats.pop - city.assignedCitizenCount
+      city.stats.Get("pop") - city.assignedCitizens.SumAllValues()
     ).toString();
-    Object.entries(city.assignedCitizens).forEach(([k, v]) => {
-      //@ts-ignore
-      this.uielements.citizens[k].count.textContent = v
-    })
+
+    for (const [k, v] of city.assignedCitizens.Entries()) {
+      this.uielements.citizens[k].count.textContent = v.toString()
+    }
   }
   private addCallbacksToCitizenManagment(city: City) {
     for (const key in this.uielements.citizens) {
@@ -174,7 +168,7 @@ export default class CityScreen implements IScreen {
         span.style.marginLeft = "5px";
         span.style.color =
           //@ts-ignore
-          city.civ.resources[key] >= item.cost[key] ? "green" : "red";
+          city.civ.resources.Get(key) >= item.cost[key] ? "green" : "red";
         //@ts-ignore
         span.innerHTML += this.costToName(key) + ": " + item.cost[key];
         this.uielements.itemDescription.appendChild(span);
@@ -185,9 +179,9 @@ export default class CityScreen implements IScreen {
         this.uielements.buildButton.classList.remove("show");
         const builder =
           "health" in (item as IProduct)
-            ? GetUnitBuilder(item.name as keyof IAsset, city.civ, city.tile)
+            ? GetUnitBuilder(item as IUnitJson, city.tile, city)
             : GetBuildingBuilder(item, city);
-        city.Build(builder);
+        city.Build(new Production(builder));
       };
     };
     li.appendChild(btn);

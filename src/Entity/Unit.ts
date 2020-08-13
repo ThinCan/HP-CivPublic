@@ -91,9 +91,7 @@ export default class Unit extends Entity {
 
   @moveDecorator
   Move(tile: Tile) {
-    if (tile.city && tile.city.civ !== this.civ) {
-      tile.city.TransferOwnership(this.civ)
-    }
+
 
     this.tile.entity = undefined;
     this.tile = tile;
@@ -108,6 +106,10 @@ export default class Unit extends Entity {
     } else this.Select();
 
     this.action && delete this.action;
+
+    if (tile.city && tile.city.civ !== this.civ) {
+      tile.city.TransferOwnership(this.civ)
+    }
   }
   OnTurn() {
     this.walkingRange = Unit.walkingRange;
@@ -159,8 +161,13 @@ export default class Unit extends Entity {
       else if (!this.isLandUnit && Unit.forbiddenTilesForNavalUnits !== tile.type) return;
 
       if (tile.entity && tile.entity !== this) return;
-      if (tile.city && tile.city.civ !== this.civ && tile.city.defense > 0)
+      if (tile.city &&
+        tile.city.civ !== this.civ
+        && tile.city.defense > 0
+        && tile.city.civ !== tile.city.civ.game.ciociaCiv)
         return;
+      if (tile.city && tile.city.civ === tile.city.civ.game.ciociaCiv && this.civ.resources.Get("mineral") < 1)
+        return
 
       if (resmap.has(tile) && total >= resmap.get(tile)) return;
       if (total > this.walkingRange) return;

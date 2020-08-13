@@ -23,7 +23,8 @@ export interface IAsset {
   Statek: HTMLImageElement
 
   Miasto: HTMLImageElement;
-  MiastoCiocia: HTMLImageElement
+  MiastoCiociaZamkniete: HTMLImageElement
+  MiastoCiociaOtwarte: HTMLImageElement
 }
 
 export class Game {
@@ -52,22 +53,22 @@ export class Game {
     (window.onresize as () => void)();
   }
 
-  async StartSinglePlayer() {
+  StartSinglePlayer() {
     this.mainCiv = GetCivilization(0, "Alexandria", this)
 
     const tile = this.map.RandomItem(this.map.tilesArray.filter(t => t.type !== TileType.Woda))
-    this.mainCiv.AddEntity(GetUnitBuilder("Osadnik", this.mainCiv, tile).Build())
+    GetUnitBuilder(Units[0], tile, this.mainCiv).Build()
     this.MainCivAction()
     this.ui.loginScreen.Close()
 
     this.Start()
   }
-  async Start() {
-    const pos = this.ciociaCiv.cities[0].tile.pos
+  Start() {
     this.MainCivAction()
-    this.map.Focus(pos)
-    this.ciociaCiv.cities[0].tile.shouldDrawCity = true
     this.ciociaCiv.cities[0].tile.isInSight = true
+    this.ciociaCiv.cities[0].tile.shouldDrawCity = true
+    this.map.Focus(this.ciociaCiv.cities[0].pos)
+    this.ui.appendToActionLog("Id twojej cywilizacji: " + this.mainCiv.id)
     this.Update();
   }
   private Update() {
@@ -80,8 +81,8 @@ export class Game {
 
     this.map.Update();
 
-    this.mainCiv.Update();
     this.ciociaCiv.Update()
+    this.mainCiv.Update();
     this.civilizations.forEach((c) => c.Update());
 
     this.c.restore();
@@ -94,6 +95,7 @@ export class Game {
   NextTurn() {
     this.mainCiv.NextTurn();
     this.civilizations.forEach((t) => t.NextTurn());
+    this.ciociaCiv.NextTurn()
     this.ui.NextTurn();
     this.mainCiv.NextAction()
   }
@@ -116,24 +118,4 @@ export class Game {
   }
 }
 
-const game = new Game({ x: 100, y: 100 });
-
-game
-  .LoadAssets({
-    Miasto: "city",
-    MiastoCiocia: "cityciocia",
-    Osadnik: "settler",
-    Robotnik: "units/worker",
-    Lucznik: "units/archer",
-    Kusznik: "units/crossbowman",
-    Wojownik: "units/warrior",
-    Taran: "units/taran",
-    Docent: "units/docent",
-    Katapulta: "units/catapult",
-    Armata: "units/cannon",
-    Konny: "units/cavalry",
-    Rycerz: "units/knight",
-    Rydwan: "units/chariot",
-    Statek: "units/ship"
-  }).then(() => {
-  })
+const game = new Game({ x: 50, y: 50 });

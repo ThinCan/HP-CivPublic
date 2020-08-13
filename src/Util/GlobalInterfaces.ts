@@ -2,12 +2,12 @@ import Tile from "../Tile";
 import City, { TAssignedCitizen } from "../Entity/City";
 import CivsJSON from "../json/civinfo.json"
 
-export interface IData {
+export interface ICityStats {
   prod: number;
   food: number;
   pop: number;
 }
-export type IBuildingData = Partial<IData & IResources>;
+export type IBuildingData = Partial<ICityStats & IResources>;
 export type Partial<T> = {
   [P in keyof T]?: T[P];
 };
@@ -32,7 +32,7 @@ export interface IAdjTiles {
   bl?: Tile;
 }
 export interface IBuildingCallback {
-  (): Partial<IData>;
+  (): Partial<ICityStats>;
 }
 export interface IProduct {
   production: number;
@@ -61,11 +61,11 @@ export interface SerializedCity {
   tiles: { x: number, y: number }[];
   stats: { pop: number, food: number };
   defense: number;
-  prod: string;
+  prod?: string;
   built: string[];
   available: string[];
   assignedCitizens: TAssignedCitizen;
-  resourceBuildings: IResources;
+  resourcesProduced: { [P in keyof IResources]: number }
   growthFactor: number;
   maxCitizens: number;
   timeLeftToGrow: number;

@@ -1,94 +1,86 @@
-import { Building, IBuilder } from "./Builder";
+import { IBuilder } from "./Builder";
 import City from "../Entity/City";
 import { IBuildingJson } from "../Util/GlobalInterfaces";
 import UnitsJSON from "../json/units.json";
-import Tile, { TileType } from "../Tile";
 
 function FindUnitInJSON(name: string) {
   return UnitsJSON.find((e) => e.name === name);
 }
 
-export abstract class BuildingBuilder implements IBuilder {
+ abstract class BuildingBuilder implements IBuilder {
   constructor(public data: IBuildingJson, public city: City) { }
-  abstract Build(): Building;
+  abstract Build(): void;
 }
 //#region builders
 class FarmBuilder extends BuildingBuilder {
   Build() {
-    return new Building(() => ({ food: 3 }), this.data);
+    this.city.stats.Add("food", 3)
   }
 }
 class LumberBuilder extends BuildingBuilder {
-  Build() {
-    return new Building(() => ({}), this.data);
-  }
+  Build() { }
 }
 class CarpenterBuilder extends BuildingBuilder {
   Build() {
     this.city.AddResourceBuilding("wood", -1);
-    return new Building(() => ({}), this.data);
   }
 }
 class HunterBuilder extends BuildingBuilder {
   Build() {
     this.city.AddAvailable(UnitsJSON.find((e) => e.name === "Lucznik"));
-    return new Building(() => ({ food: 2 }), this.data);
+    this.city.stats.Add("food", 2)
   }
 }
 class MillBuilder extends BuildingBuilder {
   Build() {
-    return new Building(() => ({ food: 2, prod: 2 }), this.data);
+    this.city.stats.Add("food", 2)
+    this.city.stats.Add("prod", 2)
   }
 }
 class QuarryBuilder extends BuildingBuilder {
-  Build() {
-    return new Building(() => ({}), this.data);
-  }
+  Build() { }
 }
 class WarriorBuilder extends BuildingBuilder {
   Build() {
     this.city.AddAvailable(FindUnitInJSON("Wojownik"));
-    console.log(this.city.available);
-    return new Building(() => ({}), this.data);
   }
 }
 class IronWorksBuilder extends BuildingBuilder {
   Build() {
-    return new Building(() => ({}), this.data);
   }
 }
 class BlacksmithBuilder extends BuildingBuilder {
   Build() {
     this.city.AddResourceBuilding("iron", -1);
-    return new Building(() => ({ prod: 3 }), this.data);
+    this.city.stats.Add("prod", 3)
   }
 }
 class CraftworkBuilder extends BuildingBuilder {
   Build() {
     this.city.AddAvailable(UnitsJSON.find((e) => e.name === "Taran"));
-    return new Building(() => ({ prod: 3 }), this.data);
+    this.city.stats.Add("prod", 3)
   }
 }
 class Stables extends BuildingBuilder {
   Build() {
     this.city.AddResourceBuilding("horse", -1);
     this.city.AddAvailable(FindUnitInJSON("Konny"));
-    return new Building(() => ({ food: 3 }), this.data);
+    this.city.stats.Add("prod", 3)
   }
 }
 class Grange extends BuildingBuilder {
   Build() {
-    return new Building(() => ({ food: 3 }), this.data);
+    this.city.stats.Add("food", 3)
   }
 }
 class Estate extends BuildingBuilder {
   Build() {
-    return new Building(() => ({ food: -3 }), this.data);
+    this.city.stats.Subtract("food", 3)
   }
 }
 class Shop extends BuildingBuilder {
   Build() {
-    return new Building(() => ({ food: 1 }), this.data);
+    this.city.stats.Add("food", 1)
   }
 }
 class TradeDistrict extends BuildingBuilder {
@@ -97,53 +89,51 @@ class TradeDistrict extends BuildingBuilder {
     this.city.AddResourceBuilding("wood", -1);
     this.city.AddResourceBuilding("stone", -2);
     this.city.AddResourceBuilding("iron", -1);
-    return new Building(() => ({}), this.data);
   }
 }
 class Market extends BuildingBuilder {
   Build() {
     this.city.AddResourceBuilding("money", 5);
-    return new Building(() => ({ food: 6 }), this.data);
+    this.city.stats.Add("food", 6)
   }
 }
 class Bank extends BuildingBuilder {
   Build() {
     this.city.AddResourceBuilding("money", 2);
-    return new Building(() => ({}), this.data);
   }
 }
 class School extends BuildingBuilder {
   Build() {
-    return new Building(() => ({ prod: 2 }), this.data);
+    this.city.stats.Add("prod", 2)
   }
 }
 class ScienceDistrict extends BuildingBuilder {
   Build() {
-    return new Building(() => ({ prod: 4 }), this.data);
+    this.city.stats.Add("prod", 4)
   }
 }
 class Library extends BuildingBuilder {
   Build() {
-    return new Building(() => ({ prod: 3 }), this.data);
+    this.city.stats.Add("prod", 3)
   }
 }
 class University extends BuildingBuilder {
   Build() {
     this.city.AddAvailable(FindUnitInJSON("Docent"));
-    return new Building(() => ({ prod: 5 }), this.data);
+    this.city.stats.Add("prod", 5)
   }
 }
 class FactoryDistrict extends BuildingBuilder {
   Build() {
     this.city.AddResourceBuilding("wood", -1);
     this.city.AddResourceBuilding("stone", -1);
-    return new Building(() => ({ prod: 5 }), this.data);
+    this.city.stats.Add("prod", 5)
   }
 }
 class Manufacture extends BuildingBuilder {
   Build() {
     this.city.AddResourceBuilding("iron", -1);
-    return new Building(() => ({ prod: 3 }), this.data);
+    this.city.stats.Add("prod", 3)
   }
 }
 class Factory extends BuildingBuilder {
@@ -151,24 +141,21 @@ class Factory extends BuildingBuilder {
     this.city.AddResourceBuilding("wood", -1);
     this.city.AddResourceBuilding("stone", -1);
     this.city.AddResourceBuilding("iron", -1);
-    return new Building(() => ({ prod: 4 }), this.data);
+    this.city.stats.Add("prod", 4)
   }
 }
 class Mason extends BuildingBuilder {
   Build() {
-    return new Building(() => ({}), this.data);
   }
 }
 class Wall_1 extends BuildingBuilder {
   Build() {
-    // -50, bo wtedy zamiast odjac, to doda
     this.city.ReceiveDamage(-50)
-    return new Building(() => ({}), this.data);
   }
 }
 class MilitaryDistrict extends BuildingBuilder {
   Build() {
-    return new Building(() => ({ prod: 5 }), this.data);
+    this.city.stats.Add("prod", 5)
   }
 }
 class CatapultsWorkshop extends BuildingBuilder {
@@ -176,47 +163,40 @@ class CatapultsWorkshop extends BuildingBuilder {
     this.city.AddAvailable(FindUnitInJSON("Katapulta"));
     this.city.AddResourceBuilding("wood", -1);
     this.city.AddResourceBuilding("iron", -1);
-    return new Building(() => ({ prod: 5 }), this.data);
+    this.city.stats.Add("prod", 5)
   }
 }
 class Engineer extends BuildingBuilder {
   Build() {
-    return new Building(() => ({ prod: 5 }), this.data);
+    this.city.stats.Add("prod", 5)
   }
 }
 class Crossbowmen extends BuildingBuilder {
   Build() {
     this.city.AddAvailable(FindUnitInJSON("Kusznik"));
-    return new Building(() => ({}), this.data);
   }
 }
 class Chariots extends BuildingBuilder {
   Build() {
     this.city.AddAvailable(FindUnitInJSON("Rydwan"));
-    return new Building(() => ({}), this.data);
   }
 }
 class KnightSchool extends BuildingBuilder {
   Build() {
     this.city.AddAvailable(FindUnitInJSON("Rycerz"));
-    return new Building(() => ({}), this.data);
   }
 }
 class Chemlab extends BuildingBuilder {
-  Build() {
-    return new Building(() => ({}), this.data);
-  }
+  Build() { }
 }
 class CannonFactory extends BuildingBuilder {
   Build() {
     this.city.AddAvailable(FindUnitInJSON("Armata"));
-    return new Building(() => ({}), this.data);
   }
 }
 class Shipyard extends BuildingBuilder {
   Build() {
     this.city.AddAvailable(FindUnitInJSON("Statek"));
-    return new Building(() => ({}), this.data);
   }
 }
 //#endregion

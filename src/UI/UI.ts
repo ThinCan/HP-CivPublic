@@ -8,9 +8,19 @@ import { Civilization } from "../Civiliziations/Civilization";
 import { Entity } from "../Entity/Entity";
 import LoginScreen from "./LoginScreen";
 
+interface IUIItems {
+  actionLog: HTMLElement;
+  turn: HTMLElement;
+  gameContainer: HTMLElement;
+  resources: { [Key in keyof IResources]: { container: HTMLElement; income: HTMLElement } }
+}
+
 export class UI {
-  private uiitems = {
+  private uiitems: IUIItems = {
     actionLog: getElement("#action-log"),
+    turn: getElement("#res-turn"),
+    gameContainer: getElement(".game-container"),
+
     resources: {
       money: {
         container: getElement("#res-gold"),
@@ -37,10 +47,8 @@ export class UI {
         income: getElement("#res-mineral-p"),
       },
     },
-    turn: getElement("#res-turn"),
-
-    gameContainer: getElement(".game-container")
   }
+
   private _turn = 1;
   private selectedEntity: Entity;
 
@@ -67,20 +75,15 @@ export class UI {
   }
 
   UpdateResources(civ: Civilization) {
-    const income = civ.GetResourceIncome();
-    const res = civ.resources;
-    type key = keyof IResources;
-    for (const k in income) {
-      if (!this.uiitems.resources[k as key]) continue;
+    for (const [k, v] of civ.resources.Entries()) {
+      this.uiitems.resources[k].container.textContent = v.toString()
+    }
+    const income = civ.GetResourcesIncome()
+    for (const key in income) {
       //@ts-ignore
-      this.uiitems.resources[k as key].container.textContent = res[k as key];
-
-      //@ts-ignore
-      const inc = Math.round(income[k]);
-      //@ts-ignore
-      this.uiitems.resources[k as key].income.textContent =
+      this.uiitems.resources[key].income.textContent =
         //@ts-ignore
-        "(" + (inc >= 0 ? "+" : "") + inc + ")";
+        income[key] > 0 ? `(+${income[key].toFixed(2)})` : `(-${income[key].toFixed(2)})`
     }
   }
   public NextTurn() {

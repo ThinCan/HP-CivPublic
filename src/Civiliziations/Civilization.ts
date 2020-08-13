@@ -2,7 +2,8 @@ import Unit from "../Entity/Unit";
 import City from "../Entity/City";
 import { Game } from "..";
 import { Entity } from "../Entity/Entity";
-import { IResources, IData } from "../Util/GlobalInterfaces";
+import { IResources } from "../Util/GlobalInterfaces";
+import { ResourceMap } from "../Util/ResourceMap";
 
 function addEntityDec(prot: any, name: string, desc: PropertyDescriptor) {
   const ori = desc.value
@@ -30,16 +31,19 @@ function removeEntityDec(prot: any, name: string, desc: PropertyDescriptor) {
 export abstract class Civilization {
   private _ready = false;
   queue: Entity[] = [];
+
   units: Unit[] = [];
   cities: City[] = [];
-  resources: IResources = {
+
+  resources = new ResourceMap<IResources>({
     iron: 1000,
     stone: 1000,
     wood: 1000,
     money: 1000,
     horse: 1000,
-    mineral: 0,
-  };
+    mineral: 1,
+  });
+
 
   constructor(
     public game: Game,
@@ -50,7 +54,7 @@ export abstract class Civilization {
 
   @addEntityDec
   AddEntity(e: Entity, broadcast = true) {
-
+    console.log(e)
     if (e instanceof Unit) { this.units.push(e); }
     else if (e instanceof City) { this.cities.push(e); }
     this.queue.push(e)
@@ -69,14 +73,9 @@ export abstract class Civilization {
   }
 
   NextTurn(select = true) {
-    this.ready = false;
-
-    const res = this.GetResourceIncome();
-    for (const key in res) {
-      if (key === "mineral") continue;
-      //@ts-ignore
-      this.resources[key] += res[key];
-    }
+    if (this.cities.length === 0 && this.units.length === 0) this.ready = true
+    else this.ready = false;
+    this.GatherResourcesFromCities();
 
     [...this.units, ...this.cities].forEach((e) => e.NextTurn(select));
   }
@@ -99,21 +98,21 @@ export abstract class Civilization {
     this.units.find((u) => u.selected)?.Deselect();
     this.cities.find((u) => u.selected)?.Deselect();
   }
-  GetResourceIncome() {
-    return this.cities.reduce(
-      (p, c) => {
-        const res = c.stats;
-        for (const k in res) {
-          //@ts-ignore
-          if (!p[k]) p[k] = 0;
-          //@ts-ignore
-          p[k] += res[k];
-        }
-
-        return p;
-      },
-      { mineral: this.resources.mineral } as Partial<IData & IResources>
-    );
+  private GatherResourcesFromCities() {
+    for (const city of this.cities) {
+      for (const [k, v] of city.resourcesProduced.Entries()) {
+        this.resources.Add(k, v)
+      }
+    }
+  }
+  public GetResourcesIncome() {
+    const res = new ResourceMap<IResources>()
+    for (const city of this.cities) {
+      for (const [k, v] of city.resourcesProduced.Entries()) {
+        res.Add(k, v)
+      }
+    }
+    return res.ToObject()
   }
   set ready(val: boolean) {
     this._ready = val
