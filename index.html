@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Page Title</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="login.css">
+</head>
+
+<body>
+    <div class="login">
+        <fieldset>
+            <legend>Cywilizacja</legend>
+            <select id="civ-select">
+                <option value="none" selected>Wybierz cywilizacje</option>
+                <option value="Alexandria">Alexandria</option>
+            </select>
+        </fieldset>
+        <form class="create-form" method="POST">
+            <fieldset>
+                <legend>Stwórz grę</legend>
+                <label for="player-count">Ilość graczy</label>
+                <input type="number" id="player-count" name="player-count" min="1" max="4" required value="1">
+                <button class="game-create" role="button">Stwórz</button>
+            </fieldset>
+        </form>
+        <form class="join-form" method="POST">
+            <fieldset>
+                <legend>Dołącz do gry</legend>
+                <label for="game-code">Kod gry</label>
+                <input type="text" name="game-code" id="game-code" maxlength="6" minlength="6" required>
+                <button class="game-join" role="button">Dołącz</button>
+            </fieldset>
+        </form>
+        <div class="civ-notify"></div>
+        <div class="civ-info">
+            <img class="civ-portrait" style="display: none;">
+            <p class="civ-info-text"></p>
+        </div>
+    </div>
+    <div class="game-container">
+        <canvas></canvas>
+
+        <div class="resources">
+            <div class="res">
+                <img src="./img/resources/stone.png" class="res-img">
+                <span id="res-stone">0</span>
+                <span id="res-stone-p">(+0)</span>
+            </div>
+            <div class="res">
+                <img src="./img/resources/iron.png" class="res-img">
+                <span id="res-iron">0</span>
+                <span id="res-iron-p">(+0)</span>
+            </div>
+            <div class="res">
+                <img src="./img/resources/wood.png" class="res-img">
+                <span id="res-wood">0</span>
+                <span id="res-wood-p">(+0)</span>
+            </div>
+            <div class="res">
+                <img src="./img/resources/horse.png" class="res-img">
+                <span id="res-horse">0</span>
+                <span id="res-horse-p">(+0)</span>
+            </div>
+            <div class="res">
+                <img src="./img/resources/money.png" class="res-img">
+                <span id="res-gold">0</span>
+                <span id="res-gold-p">(+0)</span>
+            </div>
+            <div class="res">
+                <img src="./img/modifiers/mineral.png" class="res-img">
+                <span id="res-mineral">0</span>
+                <span id="res-mineral-p"></span>
+            </div>
+            <div class="res" style="display: flex; align-items: center;">Tura:<span id="res-turn">1</span></div>
+        </div>
+        <div class="actions">
+            <div class="actions-container"></div>
+            <ul class="actions-log" id="unit-info"></ul>
+            <ul class="actions-log" id="action-log"></ul>
+        </div>
+        <div class="city">
+            <div class="city-header">
+                <h3 id="city-name">Nazwa</h3>
+                <button class="city-close">X</button>
+            </div>
+            <ul class="city-stats">
+                <li class="city-stat">Żywność: <span id="city-food">0</span></li>
+                <li class="city-stat">Populacja: <span id="city-pop">0</span></li>
+                <li class="city-stat">Produkcja: <span id="city-prod">0</span></li>
+                <li class="city-stat">Do wzrostu: <span id="city-grow">0</span> tury</li>
+                <li class="city-stat">Do ukończenia produkcji: <span id="city-build">0</span> tury</li>
+            </ul>
+            <div class="city-citizens">
+                <h4 style="width: 100%;">Obywateli do przydzielenia: <span id="citizen-count">0</span></h4>
+                <div class="city-meter">
+                    <div class="city-meter-cont">
+                        <img src="./img/icons/gear.png" class="city-meter-img" alt="">
+                        <span class="city-meter-count" id="meter-count-prod">0</span>
+                    </div>
+                    <div class="counter">
+                        <button class="counter-btn" id="meter-prod-inc">+</button>
+                        <button class="counter-btn" id="meter-prod-dec">-</button>
+                    </div>
+                </div>
+                <div class="city-meter">
+                    <div class="city-meter-cont">
+                        <img src="./img/icons/food.png" class="city-meter-img" alt="">
+                        <div class="city-meter-count" id="meter-count-pop">0</div>
+                    </div>
+                    <div class="counter">
+                        <button class="counter-btn" id="meter-pop-inc">+</button>
+                        <button class="counter-btn" id="meter-pop-dec">-</button>
+                    </div>
+                </div>
+                <div class="city-meter">
+                    <div class="city-meter-cont">
+                        <img src="./img/resources/money.png" class="city-meter-img" alt="">
+                        <div class="city-meter-count" id="meter-count-money">0</div>
+                    </div>
+                    <div class="counter">
+                        <button class="counter-btn" id="meter-money-inc">+</button>
+                        <button class="counter-btn" id="meter-money-dec">-</button>
+                    </div>
+                </div>
+                <div class="city-meter">
+                    <div class="city-meter-cont">
+                        <img src="./img/resources/horse.png" class="city-meter-img" alt="">
+                        <div class="city-meter-count" id="meter-count-horse">0</div>
+                    </div>
+                    <div class="counter">
+                        <button class="counter-btn" id="meter-horse-inc">+</button>
+                        <button class="counter-btn" id="meter-horse-dec">-</button>
+                    </div>
+                </div>
+                <div class="city-meter">
+                    <div class="city-meter-cont">
+                        <img src="./img/resources/wood.png" class="city-meter-img" alt="">
+                        <div class="city-meter-count" id="meter-count-wood">0</div>
+                    </div>
+                    <div class="counter">
+                        <button class="counter-btn" id="meter-wood-inc">+</button>
+                        <button class="counter-btn" id="meter-wood-dec">-</button>
+                    </div>
+                </div>
+                <div class="city-meter">
+                    <div class="city-meter-cont">
+                        <img src="./img/resources/iron.png" class="city-meter-img" alt="">
+                        <div class="city-meter-count" id="meter-count-iron">0</div>
+                    </div>
+                    <div class="counter">
+                        <button class="counter-btn" id="meter-iron-inc">+</button>
+                        <button class="counter-btn" id="meter-iron-dec">-</button>
+                    </div>
+                </div>
+                <div class="city-meter">
+                    <div class="city-meter-cont">
+                        <img src="./img/resources/stone.png" class="city-meter-img" alt="">
+                        <div class="city-meter-count" id="meter-count-stone">0</div>
+                    </div>
+                    <div class="counter">
+                        <button class="counter-btn" id="meter-stone-inc">+</button>
+                        <button class="counter-btn" id="meter-stone-dec">-</button>
+                    </div>
+                </div>
+            </div>
+            <div class="city-available">
+                <h4 style="text-align: center;">Dostępne budowle</h4>
+                <ul class="city-list city-buildings"></ul>
+                <h4 style="text-align: center;">Dostępne Jednostki</h4>
+                <ul class="city-list city-units"></ul>
+                <div class="available-item-desc"></div>
+            </div>
+            <button class="available-btn">Buduj</button>
+        </div>
+    </div>
+    <script src="perlin.js"></script>
+    <script src='bundle.js'></script>
+</body>
+
+</html>
