@@ -63,12 +63,11 @@ function GetBasicUnitActions(unit: Unit): IUnitAction[] {
   ];
 }
 export abstract class UnitBuilder implements IBuilder {
-  public city: City
   constructor(
     public data: IUnitJson,
-    public owner: City | Civilization,
+    public owner: Civilization,
     public dest: Tile
-  ) { if (owner instanceof City) this.city = owner }
+  ) { }
 
   private GetUnit(img: keyof IAsset) {
     return new Unit(this.dest, this.assets[img], this.civ, this.data);
@@ -90,7 +89,7 @@ export abstract class UnitBuilder implements IBuilder {
     this.OnBeforeBuild(unit);
     this.civ.AddEntity(unit, broadcast)
   }
-  get civ() { return this.owner instanceof City ? this.owner.civ : this.owner }
+  get civ() { return this.owner }
   private get assets() {
     return this.civ.game.assets;
   }
@@ -363,7 +362,7 @@ class ShipBuilder extends UnitBuilder {
   }
 }
 
-export function GetUnitBuilder(data: IUnitJson, tile: Tile, owner: Civilization | City) {
+export function GetUnitBuilder(data: IUnitJson, tile: Tile, owner: Civilization) {
   const Resolver =
     <T extends UnitBuilder>(ctor: new (...args: any[]) => T): T => new ctor(data, owner, tile);
 

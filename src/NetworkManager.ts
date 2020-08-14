@@ -1,8 +1,6 @@
 import io from "socket.io-client"
 import { SerializedTile, SerializedCity, IPickedCivilization } from "./Util/GlobalInterfaces"
-import { Game, IAsset } from "."
-import { Civilization } from "./Civiliziations/Civilization"
-import Unit from "./Entity/Unit"
+import { Game } from "."
 import { GetUnitBuilder } from "./Builders/Units"
 import UnitsJSON from "./json/units.json"
 import { TileType } from "./Tile"
@@ -17,26 +15,6 @@ export default class NetworkManager {
     constructor(private game: Game) {
         this.socket = io(this.url)
         this.socket.on("gameready", async (id: number, map: SerializedTile[], civs: IPickedCivilization[], code: string, ciociaCivPos: any) => {
-            await game.LoadAssets({
-                Miasto: "city",
-                MiastoCiociaOtwarte: "cityciociaopen",
-                MiastoCiociaZamkniete: "cityciociaclosed",
-                Osadnik: "settler",
-                Robotnik: "units/worker",
-                Lucznik: "units/archer",
-                Kusznik: "units/crossbowman",
-                Wojownik: "units/warrior",
-                Taran: "units/taran",
-                Docent: "units/docent",
-                Katapulta: "units/catapult",
-                Armata: "units/cannon",
-                Konny: "units/cavalry",
-                Rycerz: "units/knight",
-                Rydwan: "units/chariot",
-                Statek: "units/ship"
-            })
-
-
             this.roomcode = code
             const pickedCiv = game.ui.loginScreen.pickedCiv
             game.mainCiv = GetCivilization(id, pickedCiv.civname, game)
@@ -46,7 +24,6 @@ export default class NetworkManager {
 
             game.map.LoadMap(map)
 
-            console.log(ciociaCivPos)
             const tiles = game.map.tilesArray.filter(t => t.type !== TileType.Woda)
             const tile = game.map.RandomItem(tiles)
             GetUnitBuilder(UnitsJSON[0], tile, game.mainCiv).Build()

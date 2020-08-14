@@ -8,7 +8,10 @@ export default class LoginScreen implements IScreen {
         getElement(".login").style.display = "none"
         getElement(".game-container").style.display = "flex"
     }
-    Show() { }
+    Show() {
+        getElement(".login").style.display = "flex"
+        getElement(".game-container").style.display = "none"
+    }
 
     private ready = false
     public pickedCiv: IPickedCivilization

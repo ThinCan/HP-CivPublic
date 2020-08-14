@@ -35,13 +35,21 @@ export abstract class Civilization {
   units: Unit[] = [];
   cities: City[] = [];
 
-  resources = new ResourceMap<IResources>({
+  /* resources = new ResourceMap<IResources>({
     iron: 1000,
     stone: 1000,
     wood: 1000,
     money: 1000,
     horse: 1000,
     mineral: 1,
+  }); */
+  resources = new ResourceMap<IResources>({
+    iron: 0,
+    stone: 0,
+    wood: 0,
+    money: 0,
+    horse: 0,
+    mineral: 0,
   });
 
 
@@ -54,7 +62,6 @@ export abstract class Civilization {
 
   @addEntityDec
   AddEntity(e: Entity, broadcast = true) {
-    console.log(e)
     if (e instanceof Unit) { this.units.push(e); }
     else if (e instanceof City) { this.cities.push(e); }
     this.queue.push(e)
@@ -80,6 +87,7 @@ export abstract class Civilization {
     [...this.units, ...this.cities].forEach((e) => e.NextTurn(select));
   }
   NextAction() {
+    
     if (this.queue.length === 0) {
       this.DeselectLastEntity();
       this.ready = true;

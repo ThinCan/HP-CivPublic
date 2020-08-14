@@ -179,9 +179,9 @@ export default class CityScreen implements IScreen {
         this.uielements.buildButton.classList.remove("show");
         const builder =
           "health" in (item as IProduct)
-            ? GetUnitBuilder(item as IUnitJson, city.tile, city)
+            ? GetUnitBuilder(item as IUnitJson, city.tile, city.civ)
             : GetBuildingBuilder(item, city);
-        city.Build(new Production(builder));
+        city.Build(new Production(builder, city));
       };
     };
     li.appendChild(btn);

@@ -184,7 +184,7 @@ export default class Map {
         else if (val < 0.25) tile.type = TileType.Ziemia;
         else if (val < 0.35) tile.type = TileType.Ciemnaziemia;
         else if (val < 0.9) tile.type = TileType.Skała;
-        else tile.type = TileType.Śnieg; // snieg
+        else tile.type = TileType.Śnieg;
       }
     }
 

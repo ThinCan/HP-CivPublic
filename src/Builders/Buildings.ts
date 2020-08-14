@@ -2,13 +2,15 @@ import { IBuilder } from "./Builder";
 import City from "../Entity/City";
 import { IBuildingJson } from "../Util/GlobalInterfaces";
 import UnitsJSON from "../json/units.json";
+import { Civilization } from "../Civiliziations/Civilization";
 
 function FindUnitInJSON(name: string) {
   return UnitsJSON.find((e) => e.name === name);
 }
 
- abstract class BuildingBuilder implements IBuilder {
-  constructor(public data: IBuildingJson, public city: City) { }
+abstract class BuildingBuilder implements IBuilder {
+  civ: Civilization
+  constructor(public data: IBuildingJson, public city: City) { this.civ = city.civ }
   abstract Build(): void;
 }
 //#region builders

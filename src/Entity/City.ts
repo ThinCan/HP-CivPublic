@@ -1,4 +1,4 @@
-import { IBuilder, Production } from "../Builders/Builder";
+import { Production } from "../Builders/Builder";
 import { Civilization } from "../Civiliziations/Civilization";
 import BuildingsJSON from "../json/citybuilding.json";
 import UnitsJSON from "../json/units.json";
@@ -7,7 +7,6 @@ import { IResources, IProduct, SerializedCity, ICityStats, IBuildingJson } from 
 import { Entity } from "./Entity";
 import { GetUnitBuilder } from "../Builders/Units";
 import { GetBuildingBuilder } from "../Builders/Buildings";
-import { IAsset } from "..";
 import { ResourceMap } from "../Util/ResourceMap";
 
 export type TAssignedCitizen = IResources & { prod: number; food: number };
@@ -86,8 +85,8 @@ export default class City extends Entity {
   }
 
   OnTurn() {
-    if(this.civ === this.civ.game.mainCiv)
-    this.tiles.forEach(t => t.SetVisibility(true))
+    if (this.civ === this.civ.game.mainCiv)
+      this.tiles.forEach(t => t.SetVisibility(true))
 
     //#region Population Growth
     if (this.growthFactor !== 0) this.timeLeftToGrow--;
@@ -113,11 +112,11 @@ export default class City extends Entity {
 
     //#endregion
     this.production?.Next()
-    console.log(this.production)
+    console.log(this.production?.timeLeftToBuild)
 
     // look for new available buildings
     BuildingsJSON.forEach((building) => {
-      if(this.built.has(building)) return
+      if (this.built.has(building)) return
       const reqs = building.requires;
       if (!reqs.every((r) => this.built.has(BuildingsJSON.find(t => t.name === r)))) return;
 
@@ -176,7 +175,6 @@ export default class City extends Entity {
     this.SendUpdate()
   }
   UpdateData(data: SerializedCity) {
-    console.log("aktuazlizuje")    
     const tiles = data.tiles.map(t => this.civ.game.map.tiles[t.x][t.y])
     tiles.forEach(t => t.owner = this)
     this.tiles = tiles
@@ -185,8 +183,8 @@ export default class City extends Entity {
 
     if (data.prod) {
       const isProdUnit = UnitsJSON.find(t => t.name === data.prod)
-      if (isProdUnit) this.production = new Production(GetUnitBuilder(isProdUnit, this.tile, this.civ))
-      else this.production = new Production(GetBuildingBuilder(BuildingsJSON.find(t => t.name === data.prod), this))
+      if (isProdUnit) this.production = new Production(GetUnitBuilder(isProdUnit, this.tile, this.civ), this)
+      else this.production = new Production(GetBuildingBuilder(BuildingsJSON.find(t => t.name === data.prod), this), this)
     }
 
     this.built = new Set(data.built.map(t => BuildingsJSON.find(b => b.name === t)))
@@ -205,8 +203,8 @@ export default class City extends Entity {
     this.timeLeftToGrow = data.timeLeftToGrow
   }
   SendUpdate() {
-    if(this.civ === this.civ.game.mainCiv)
-    this.civ.game.network.UpdateCity(this.Serialize())
+    if (this.civ === this.civ.game.mainCiv)
+      this.civ.game.network.UpdateCity(this.Serialize())
   }
   Serialize(): SerializedCity {
     return {
