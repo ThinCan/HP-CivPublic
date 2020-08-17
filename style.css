@@ -86,6 +86,7 @@ canvas {
   background-color: coral;
   transform: translateX(-100%);
   transition: 500ms transform ease-out;
+  overflow-y: auto;
 }
 
 .city.show {
