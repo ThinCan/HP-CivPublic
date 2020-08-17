@@ -1,0 +1,234 @@
+* {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  font-size: small;
+}
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.game-container {
+  display: flex;
+  flex-flow: column;
+  justify-content: flex-end;
+}
+
+canvas {
+  background-color: black;
+}
+
+.actions {
+  height: 200px;
+  width: 100%;
+  background-color: coral;
+  display: flex;
+}
+
+.actions-container {
+  display: flex;
+  flex-flow: row wrap;
+  flex-grow: 10;
+  align-items: flex-start;
+  overflow-y: auto;
+}
+
+.actions-log {
+  display: flex;
+  flex-flow: column;
+  overflow-y: auto;
+  border-left: 5px solid green;
+  background-color: rgb(173, 86, 54);
+  list-style: none;
+  padding: 5px;
+  margin: 0;
+  flex-grow: 2;
+  font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+  color: cornsilk;
+}
+
+.actions-log + .actions.log {
+  border-right: 5px solid green;
+}
+
+.actions-turn {
+  flex-basis: 40px;
+}
+
+.action-btn {
+  padding: 0px;
+  flex-basis: 50px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  height: 50px;
+}
+
+.action-img {
+  width: 45px;
+  height: auto;
+}
+
+.city {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  box-sizing: border-box;
+  border: 5px solid green;
+  padding: 10px;
+  top: 0;
+  left: 0;
+  width: 350px;
+  height: 100%;
+  background-color: coral;
+  transform: translateX(-100%);
+  transition: 500ms transform ease-out;
+  overflow-y: auto;
+}
+
+.city.show {
+  transform: translateX(0);
+}
+
+.city-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: auto;
+  border-bottom: 5px solid green;
+}
+
+.city-close {
+  width: 40px;
+  height: 40px;
+}
+
+#city-name {
+  white-space: nowrap;
+  overflow: hidden;
+  margin-right: 10px;
+  text-overflow: ellipsis;
+}
+
+.city-stats,
+.city-available {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  border-bottom: 5px solid green;
+  padding-bottom: 5px;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+}
+
+.city-stats :not(:last-child) {
+  margin-right: 10px;
+}
+
+.city-available {
+  display: block;
+}
+
+.city-list {
+  display: flex;
+  max-height: 100px;
+  overflow-y: auto;
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+}
+
+.city-citizens {
+  border-bottom: 5px solid green;
+  padding-bottom: 5px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.city-meter {
+  display: flex;
+}
+
+.city-meter-cont {
+  position: relative;
+}
+
+.city-meter-img {
+  width: 40px;
+  height: 40px;
+}
+
+.city-meter-count {
+  width: 20px;
+  height: 20px;
+  text-align: center;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.472);
+  border-radius: 50%;
+  padding: 3px;
+  color: white;
+}
+
+.counter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.counter-btn {
+  padding: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.available-list-item:not(:last-child) {
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+
+.available-list-btn {
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.list-btn-img {
+  width: 40px;
+  height: 40px;
+}
+
+.available-btn {
+  visibility: hidden;
+  margin-top: auto;
+}
+
+.available-btn.show {
+  visibility: visible;
+}
+
+.resources {
+  position: absolute;
+  display: flex;
+  flex-direction: row-reverse;
+  top: 0;
+  right: 0;
+  border: 5px solid green;
+  padding: 5px;
+  background-color: coral;
+  user-select: none;
+}
+
+.resources > :not(:first-child) {
+  margin-right: 10px;
+}
+
+.res-img {
+  width: 30px;
+  height: 30px;
+}
